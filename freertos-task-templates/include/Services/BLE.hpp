@@ -49,10 +49,14 @@ namespace Service
     template <>
     const uint8_t RTOS::ActiveObject<BLE>::mInputQueueItemSize = sizeof(uint16_t);
     template <>
-    const size_t RTOS::ActiveObject<BLE>::mInputQueueSizeBytes = RTOS::ActiveObject<Service::BLE>::mInputQueueItemLength * RTOS::ActiveObject<Service::BLE>::mInputQueueItemSize;
+    const size_t RTOS::ActiveObject<BLE>::mInputQueueSizeBytes = 
+                                RTOS::ActiveObject<Service::BLE>::mInputQueueItemLength 
+                                * RTOS::ActiveObject<Service::BLE>::mInputQueueItemSize;
 
     template <>
-    uint8_t RTOS::ActiveObject<BLE>::mInputQueueAllocation[RTOS::ActiveObject<Service::BLE>::mInputQueueSizeBytes] = { 0 };
+    uint8_t RTOS::ActiveObject<BLE>::mInputQueueAllocation  [
+                                                                RTOS::ActiveObject<Service::BLE>::mInputQueueSizeBytes
+                                                            ] = { 0 };
 }
 
 #endif
