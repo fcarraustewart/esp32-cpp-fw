@@ -34,7 +34,10 @@ namespace RTOS
     private:
     protected:
         ActiveObject(){};
-        static std::string mName;
+        static const std::string mName;
+        static const uint8_t mInputQueueItemLength;
+        static const uint8_t mInputQueueItemSize;
+        static uint8_t mInputQueueAllocation[];
         static uint8_t mCountLoops;
     };
 

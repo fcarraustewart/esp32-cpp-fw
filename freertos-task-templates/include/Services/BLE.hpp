@@ -24,9 +24,15 @@ namespace Service
 namespace Service
 {
     template <>
-    std::string RTOS::ActiveObject<BLE>::mName = std::string("BLE");
+    const std::string RTOS::ActiveObject<BLE>::mName = std::string("BLE");
     template <>
     uint8_t RTOS::ActiveObject<BLE>::mCountLoops = 0;
+    template <>
+    const uint8_t RTOS::ActiveObject<BLE>::mInputQueueItemLength = 16;
+    template <>
+    const uint8_t RTOS::ActiveObject<BLE>::mInputQueueItemSize = sizeof(uint8_t);
+    // template <>
+    // const uint8_t RTOS::ActiveObject<BLE>::mInputQueueAllocation[RTOS::ActiveObject<BLE>::mInputQueueItemLength] = { 0 };
 }
 
 #endif

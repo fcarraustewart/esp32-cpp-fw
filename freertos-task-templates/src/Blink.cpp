@@ -16,7 +16,6 @@ void loop()
   delay(5);
 
   Service::BLE::Run();  
-  Service::LoRa::Run();
 
   delay(40);
 }
