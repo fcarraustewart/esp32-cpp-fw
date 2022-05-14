@@ -6,19 +6,16 @@
 #include <Arduino.h>
 #include "Task.hpp"
 
-static const std::string name1 = std::string("HelloWorld");
-
-static Service SVCBaseTask1 = Service(name1);
-
 void setup()
 {
 }
 
 void loop()
 {
-  delay(500);
+  delay(5);
 
-  SVCBaseTask1.PrintName();
+  Service::BLE::Run();  
+  Service::LoRa::Run();
 
-  delay(500);
+  delay(40);
 }
