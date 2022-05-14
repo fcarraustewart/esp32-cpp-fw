@@ -1,15 +1,13 @@
 #ifndef ACTIVE_OBJECT__H_H
 #define ACTIVE_OBJECT__H_H
 
-
-#include "FreeRTOS.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include <string>
 
 namespace RTOS
 {
-
     template <class D>
     class ActiveObject
     {
@@ -25,13 +23,13 @@ namespace RTOS
         };
         static void Initialize()
         {
-            D::Initialize();
             printf("%s::Initializes.\r\n", mName.c_str());
+            D::Initialize();
         };
         static void End()
         {
-            D::End();
             printf("%s::Ends.\r\n", mName.c_str());
+            D::End();
         };
         static void Loop()
         {
@@ -45,14 +43,21 @@ namespace RTOS
         };
         static void Send(const uint8_t msg[])
         {
-            printf("On Service::%s::Send(). Posting message: 0x", mName.c_str());
-            for (size_t i = 0; i < mInputQueueItemSize; i++)
+            if( xPortInIsrContext() ) /**< Does this work in another platform rather than ESP32? */
+            {    
+                BaseType_t xHigherPriorityTaskWoken;
+                xQueueSendFromISR(mInputQueue,  (void*) msg, &xHigherPriorityTaskWoken);
+                if(xHigherPriorityTaskWoken)
+                    portYIELD_FROM_ISR();
+            } 
+            else
             {
-                printf("%x", msg[i]);
+                printf("On Service::%s::Send(). Posting message: 0x", mName.c_str());
+                for (size_t i = 0; i < mInputQueueItemSize; i++)
+                    printf("%x", msg[i]);
+                printf("\r\n");
+                xQueueSend(mInputQueue,         (void*) msg, portMAX_DELAY);
             }
-            printf("\r\n");
-            
-            xQueueSend(mInputQueue, (void*)msg, portMAX_DELAY);
         };
 
     private:
