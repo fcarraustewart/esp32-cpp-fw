@@ -10,7 +10,7 @@ namespace Service
     {
     public:
         static void Initialize(){};
-        static void Loop(){
+        static void Loop(const uint8_t arg[]){
             printf("%s InputQueueContents are: 0x", mName.c_str());
             for (size_t i = 0; i < mInputQueueSizeBytes; i++)
             {
@@ -18,6 +18,13 @@ namespace Service
             }
             printf("\r\n");
             printf("%s mInputQueueSizeBytes is: %d\r\n", mName.c_str(), mInputQueueSizeBytes);
+            
+            printf("%s Read message is: 0x", mName.c_str());
+            for (size_t i = 0; i < mInputQueueItemSize; i++)
+            {
+                printf("%x", arg[i]);
+            }
+            printf("\r\n");
             
         };
         static void End(){
@@ -57,6 +64,22 @@ namespace Service
     uint8_t RTOS::ActiveObject<BLE>::mInputQueueAllocation  [
                                                                 RTOS::ActiveObject<Service::BLE>::mInputQueueSizeBytes
                                                             ] = { 0 };
+    
+    
+    
+    template <>
+    QueueHandle_t RTOS::ActiveObject<BLE>::mInputQueue = xQueueCreate(
+                                                            // uxQueueLength,
+                                                            mInputQueueItemLength,
+                                                            // uxItemSize,
+                                                            mInputQueueItemLength
+                                                            /*,
+                                                                    // uint8_t *pucQueueStorageBuffer,
+                                                                    mInputQueueAllocation,
+                                                                    // StaticQueue_t *pxQueueBuffer 
+                                                                    &(RTOS::ActiveObject<Service::BLE>::mInputQueue)
+                                                            */
+                                                        );
 }
 
 #endif
