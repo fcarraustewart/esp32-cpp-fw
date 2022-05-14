@@ -73,7 +73,7 @@ namespace Service
                                                             mInputQueueItemLength,
                                                             // uxItemSize,
                                                             mInputQueueItemLength
-                                                            /*,
+                                                            /*, STATIC NOT SUPPORTED BY THIS ARDUINO FreeRTOS PORT
                                                                     // uint8_t *pucQueueStorageBuffer,
                                                                     mInputQueueAllocation,
                                                                     // StaticQueue_t *pxQueueBuffer 
