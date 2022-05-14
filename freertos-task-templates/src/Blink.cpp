@@ -14,7 +14,7 @@ void setup()
 static const uint16_t msg = 0xAAAA;
 void loop()
 {
-  delay(5);
+  delay(200);
 
   Service::BLE::Send((uint8_t*)&msg);  
 

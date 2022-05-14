@@ -45,8 +45,14 @@ namespace RTOS
         };
         static void Send(const uint8_t msg[])
         {
-            printf("On %s::Send() %d.\r\n", mName.c_str(), msg[0]);
-            xQueueSend(mInputQueue, (void*)msg, 0);
+            printf("On Service::%s::Send(). Posting message: 0x", mName.c_str());
+            for (size_t i = 0; i < mInputQueueItemSize; i++)
+            {
+                printf("%x", msg[i]);
+            }
+            printf("\r\n");
+            
+            xQueueSend(mInputQueue, (void*)msg, portMAX_DELAY);
         };
 
     private:
