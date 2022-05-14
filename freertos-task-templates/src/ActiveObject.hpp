@@ -6,9 +6,6 @@ template <class D>
 class ActiveObject
 {
 public:
-    ActiveObject()
-    {
-    };
     static void Run() 
     { 
         Initialize(); 
@@ -33,6 +30,9 @@ public:
     };
 private:
 protected:
+    ActiveObject()
+    {
+    };
     static std::string mName;
     static uint8_t mCountLoops;
 };
