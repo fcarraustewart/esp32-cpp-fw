@@ -18,7 +18,8 @@ namespace RTOS
         static void Run()
         {
             Initialize();
-            Loop();
+            while(1)
+                Loop();
             End();
         };
         static void Initialize()
@@ -35,11 +36,11 @@ namespace RTOS
         {
             uint8_t arg[mInputQueueItemSize];
             
-            xQueueReceive(mInputQueue, (void*)arg, portMAX_DELAY);
-            printf("%s::Loops %d.\r\n", mName.c_str(), mCountLoops);
+            printf("Service::%s::Loop() %d.\r\n", mName.c_str(), mCountLoops);
             mCountLoops++;
-            
-            D::Loop(arg);
+    
+            if(pdTRUE == xQueueReceive(mInputQueue, (void*)arg, portMAX_DELAY))
+                D::Loop(arg);
         };
         static void Send(const uint8_t msg[])
         {
