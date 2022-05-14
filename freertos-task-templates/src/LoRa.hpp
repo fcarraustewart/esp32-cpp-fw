@@ -3,6 +3,9 @@
 #include "FreeRTOS.h"
 #include "ActiveObject.hpp"
 
+/**
+* Customize the static methods of an ActiveObject
+*/
 namespace Service{
     class LoRa : public ActiveObject<LoRa>
     {
@@ -22,6 +25,9 @@ namespace Service{
 
 }
 
+/**
+* Build the static members on the ActiveObject
+*/
 namespace Service {    
     template<>
     std::string ActiveObject<LoRa>::mName = std::string("LoRa");
