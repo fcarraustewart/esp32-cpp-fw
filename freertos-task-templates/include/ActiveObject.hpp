@@ -1,7 +1,10 @@
 #ifndef ACTIVE_OBJECT__H_H
 #define ACTIVE_OBJECT__H_H
 #include "FreeRTOS.h"
+namespace RTOS
+{
 
+}
 template <class D>
 class ActiveObject
 {

@@ -4,8 +4,8 @@
  */
 
 #include <Arduino.h>
-#include "LoRa.hpp"
-#include "BLE.hpp"
+#include "Services/LoRa.hpp"
+#include "Services/BLE.hpp"
 
 void setup()
 {
