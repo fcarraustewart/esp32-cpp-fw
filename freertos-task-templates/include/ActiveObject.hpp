@@ -42,13 +42,13 @@ namespace RTOS
      *                  Member Variables:
      */
     public:
+    protected:
+        static const std::string    mName;
+        static uint8_t              mCountLoops;
         static const uint8_t        mInputQueueItemLength;
         static const uint8_t        mInputQueueItemSize;
         static const size_t         mInputQueueSizeBytes;
         static uint8_t              mInputQueueAllocation[];
-    protected:
-        static const std::string    mName;
-        static uint8_t              mCountLoops;
     };
 
 }
