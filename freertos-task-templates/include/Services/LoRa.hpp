@@ -1,13 +1,12 @@
 #ifndef SERVICE_LORA__H_H
 #define SERVICE_LORA__H_H
-#include "FreeRTOS.h"
 #include "ActiveObject.hpp"
 
 /**
-* Customize the static methods of an ActiveObject
+* Customize the static methods of an RTOS::ActiveObject
 */
 namespace Service{
-    class LoRa : public ActiveObject<LoRa>
+    class LoRa : public RTOS::ActiveObject<LoRa>
     {
     public:
         static void Initialize() 
@@ -20,19 +19,19 @@ namespace Service{
         { 
         };
     private:
-        LoRa() : ActiveObject<LoRa>() { };
+        LoRa() : RTOS::ActiveObject<LoRa>() { };
     };
 
 }
 
 /**
-* Build the static members on the ActiveObject
+* Build the static members on the RTOS::ActiveObject
 */
 namespace Service {    
     template<>
-    std::string ActiveObject<LoRa>::mName = std::string("LoRa");
+    std::string RTOS::ActiveObject<LoRa>::mName = std::string("LoRa");
     template<>
-    uint8_t ActiveObject<LoRa>::mCountLoops = 0;
+    uint8_t RTOS::ActiveObject<LoRa>::mCountLoops = 0;
 }
 
 
