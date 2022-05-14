@@ -69,17 +69,19 @@ namespace RTOS
      */
     public:
     protected:
-        static const std::string    mName;
-        static uint8_t              mCountLoops;
+        static const    std::string mName;                      /**< The variables used to create the queue */
+        static          uint8_t     mCountLoops;                /**< The variables used to create the queue */
+        static const    uint8_t     mInputQueueItemLength;      /**< The variables used to create the queue */
 
-        /* The variables used to create the queue */
-        static const uint8_t        mInputQueueItemLength;
-        static const uint8_t        mInputQueueItemSize;
-        static const size_t         mInputQueueSizeBytes;
-        static uint8_t              mInputQueueAllocation[];
+        
+        static const    uint8_t     mInputQueueItemSize;        /**< The variables used to create the queue */
+        static const    size_t      mInputQueueSizeBytes;       /**< The variables used to create the queue */
+        static          uint8_t     mInputQueueAllocation[];    /**< The variables used to create the queue */
 
-        /* The variable used to hold the queue's data structure. */
-        static QueueHandle_t        mInputQueue;
+        /** 
+         * The variable used to hold the queue's data structure. 
+         * */
+        static          QueueHandle_t   mInputQueue;
     };
 
 }
