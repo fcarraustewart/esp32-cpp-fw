@@ -7,6 +7,9 @@ namespace RTOS
     template <class D>
     class ActiveObject
     {
+    /**
+     * Methods:
+     */
     public:
         static void Run()
         {
@@ -26,19 +29,26 @@ namespace RTOS
         };
         static void Loop()
         {
-            D::Loop();
             printf("%s::Loops %d.\r\n", mName.c_str(), mCountLoops);
             mCountLoops++;
+            D::Loop();
         };
 
     private:
     protected:
         ActiveObject(){};
-        static const std::string mName;
-        static const uint8_t mInputQueueItemLength;
-        static const uint8_t mInputQueueItemSize;
-        static uint8_t mInputQueueAllocation[];
-        static uint8_t mCountLoops;
+
+    /**
+     *                  Member Variables:
+     */
+    public:
+        static const uint8_t        mInputQueueItemLength;
+        static const uint8_t        mInputQueueItemSize;
+        static const size_t         mInputQueueSizeBytes;
+        static uint8_t              mInputQueueAllocation[];
+    protected:
+        static const std::string    mName;
+        static uint8_t              mCountLoops;
     };
 
 }
