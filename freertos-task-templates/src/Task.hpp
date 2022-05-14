@@ -1,16 +1,6 @@
 #ifndef TASK__H_H
 #define TASK__H_H
 #include "FreeRTOS.h"
-class Task
-{
-public:
-    Task(const std::string name) { mName = name;};
-    void PrintName() { printf("mName = %s\r\n", mName.c_str()); };
-    std::string GetName() { return mName; };
-
-private:
-    std::string mName;
-};
 
 template <class D>
 class Base
@@ -19,12 +9,25 @@ public:
     Base(D* derived)
     {
         mDerived = derived;
-        mName = derived->GetName();
     };
-    void PrintName() { mDerived->PrintName(); };
+    void PrintName() { mDerived->Run(); };
 
 private:
     D* mDerived;
+protected:
     std::string mName;
 };
+
+
+class Service : public Base<Service>
+{
+public:
+    Service(const std::string name) : Base<Service>(this) { Base::mName = name;};
+    void Run() 
+    { 
+        printf("Running task mName = %s\r\n", mName.c_str()); 
+    };
+private:
+};
+
 #endif
