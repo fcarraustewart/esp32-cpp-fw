@@ -16,6 +16,7 @@ namespace RTOS
      */
     public:
         static void Run()
+        static void Run(void * arg)
         {
             Initialize();
             while(1)
