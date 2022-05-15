@@ -11,11 +11,7 @@ namespace RTOS
     template <class D>
     class ActiveObject
     {
-    /**
-     * Methods:
-     */
     public:
-        static void Run()
         static void Run(void * arg)
         {
             Initialize();
@@ -25,12 +21,12 @@ namespace RTOS
         };
         static void Initialize()
         {
-            printf("%s::Initializes.\r\n", mName.c_str());
+            printf("Service::%s::Initializes.\r\n", mName.c_str());
             D::Initialize();
         };
         static void End()
         {
-            printf("%s::Ends.\r\n", mName.c_str());
+            printf("Service::%s::End().\r\n", mName.c_str());
             D::End();
         };
         static void Loop()
@@ -54,10 +50,6 @@ namespace RTOS
             } 
             else
             {
-                printf("On Service::%s::Send(). Posting message: 0x", mName.c_str());
-                for (size_t i = 0; i < mInputQueueItemSize; i++)
-                    printf("%x", msg[i]);
-                printf("\r\n");
                 xQueueSend(mInputQueue,         (void*) msg, portMAX_DELAY);
             }
         };
