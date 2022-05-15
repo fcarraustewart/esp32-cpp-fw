@@ -11,30 +11,12 @@ namespace Service
     public:
         static void Initialize(){};
         static void Loop(const uint8_t arg[]){
-            printf("%s InputQueueContents are: 0x", mName.c_str());
-            for (size_t i = 0; i < mInputQueueSizeBytes; i++)
-            {
-                printf("%x", mInputQueueAllocation[i]);
-            }
-            printf("\r\n");
-            printf("%s mInputQueueSizeBytes is: %d\r\n", mName.c_str(), mInputQueueSizeBytes);
-            
-            printf("%s Read message is: 0x", mName.c_str());
-            for (size_t i = 0; i < mInputQueueItemSize; i++)
-            {
-                printf("%x", arg[i]);
-            }
-            printf("\r\n");
-            
+            /**
+             * Handle arg packet.
+             */
+            printf("Service::%s::Handles: %x\r\n", mName.c_str(), arg[0]);
         };
         static void End(){
-            static size_t count = 0;
-            if(mCountLoops % 5 == 0){
-                mInputQueueAllocation[count] = 0x00;
-                mInputQueueAllocation[count+1] = 0xF;  
-                count++;
-                count = count % mInputQueueSizeBytes;  
-            }
         };
 
     private:
@@ -59,26 +41,14 @@ namespace Service
     const size_t RTOS::ActiveObject<BLE>::mInputQueueSizeBytes = 
                                 RTOS::ActiveObject<Service::BLE>::mInputQueueItemLength 
                                 * RTOS::ActiveObject<Service::BLE>::mInputQueueItemSize;
-
     template <>
     uint8_t RTOS::ActiveObject<BLE>::mInputQueueAllocation  [
                                                                 RTOS::ActiveObject<Service::BLE>::mInputQueueSizeBytes
                                                             ] = { 0 };
-    
-    
-    
     template <>
     QueueHandle_t RTOS::ActiveObject<BLE>::mInputQueue = xQueueCreate(
-                                                            // uxQueueLength,
                                                             mInputQueueItemLength,
-                                                            // uxItemSize,
                                                             mInputQueueItemLength
-                                                            /*, STATIC NOT SUPPORTED BY THIS ARDUINO FreeRTOS PORT
-                                                                    // uint8_t *pucQueueStorageBuffer,
-                                                                    mInputQueueAllocation,
-                                                                    // StaticQueue_t *pxQueueBuffer 
-                                                                    &(RTOS::ActiveObject<Service::BLE>::mInputQueue)
-                                                            */
                                                         );
 }
 

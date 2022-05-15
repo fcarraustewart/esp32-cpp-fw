@@ -32,10 +32,6 @@ namespace RTOS
         static void Loop()
         {
             uint8_t arg[mInputQueueItemSize];
-            
-            printf("Service::%s::Loop() %d.\r\n", mName.c_str(), mCountLoops);
-            mCountLoops++;
-    
             if(pdTRUE == xQueueReceive(mInputQueue, (void*)arg, portMAX_DELAY))
                 D::Loop(arg);
         };
