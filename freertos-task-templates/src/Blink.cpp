@@ -7,15 +7,19 @@
 #include <Arduino.h>
 #include "Services/LoRa.hpp"
 #include "Services/BLE.hpp"
+#include "MsgBroker.hpp"
+
+static RTOS::MsgBroker M = RTOS::MsgBroker();
 
 static volatile uint16_t interruptCounter;
 static hw_timer_t * timer = NULL;
 static portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
- 
 static const uint16_t msg = 0xAAAA;
+static const uint8_t msgEE[] = {0xEE};
 
 void IRAM_ATTR onTimer() {
   Service::BLE::Send((uint8_t*)&(++interruptCounter));  /**< This runs the xQueueFromISR version of Send. */
+  M << msgEE;
 }
 void setup() {
   timer = timerBegin(0, 2, true);
