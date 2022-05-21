@@ -24,7 +24,7 @@ namespace Service
                 }
                 default:
                 {
-                    printf("(%s:%d)\t[Service::%s\t]::%s():\t%x.\tNYI.\r\n",  __FILENAME__, __LINE__, mName.c_str(), __func__, arg[0]);
+                    printf("(BLE:%d)\t[Service::%s\t]::%s():\t%x.\tNYI.\r\n", __LINE__, mName.c_str(), __func__, arg[0]);
                     break;
                 }
             };
