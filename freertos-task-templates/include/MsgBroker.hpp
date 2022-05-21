@@ -7,18 +7,35 @@
 #include "freertos/task.h"
 #include <string>
 
-using packet_t = uint8_t;
-
 namespace RTOS
 {
     class MsgBroker
     {
     public:
+        static const    uint16_t            cMaxPayloadLength = 10;
+        using           payload_t = uint8_t[cMaxPayloadLength];
+        
+        enum class Event
+        {
+            BLEConnected,
+            LoRaConnected,
+        };
+        struct __attribute__ ((packed)) Message
+        {
+            uint8_t     mSource;
+            uint8_t     mDestination;
+            Event       mEvent;
+            uint16_t    mLength;
+            payload_t   mPayload;
 
-    template<typename... TArgs>
-    static void Create()
-    {
-    };
+            //Message(Event& event, payload_t& p, uint16_t& l){}; Constructor?
+        };
+    public:
+        
+        template<typename... TArgs>
+        static void Create()
+        {
+        };
     private:
 
 
@@ -36,19 +53,19 @@ namespace RTOS
 
 
 
-RTOS::MsgBroker& operator<<(RTOS::MsgBroker& m, const uint8_t msg[])
+RTOS::MsgBroker& operator<<(RTOS::MsgBroker& obj, RTOS::MsgBroker::Message& msg)
 {
     bool bleServiceRegistered = true;   //TODO: Use some kind of register process with a template<Args...> MsgBroker::Create()
-    switch(msg[0])
+    switch( msg.mDestination )
     {
         default:
         {
             if(bleServiceRegistered)
-                Service::BLE::Send(msg);
+                Service::BLE::Send((uint8_t*)   &msg.mEvent     );
             break;
         };
     };        
 
-    return m;
+    return obj;
 }
 #endif
