@@ -10,7 +10,7 @@ namespace Service
     {
     public:
         static void Initialize(){};
-        static void Loop(const uint8_t arg[]){
+        static void Handle(const uint8_t arg[]){
             /**
              * Handle arg packet.
              */
@@ -29,27 +29,35 @@ namespace Service
  */
 namespace Service
 {
+    using               _BLE = RTOS::ActiveObject<Service::BLE>;
+
     template <>
-    const std::string RTOS::ActiveObject<BLE>::mName = std::string("BLE");
+    const std::string   _BLE::mName = std::string("BLE");
     template <>
-    uint8_t RTOS::ActiveObject<BLE>::mCountLoops = 0;
+    uint8_t             _BLE::mCountLoops = 0;
     template <>
-    const uint8_t RTOS::ActiveObject<BLE>::mInputQueueItemLength = 16;
+    const uint8_t       _BLE::mInputQueueItemLength = 16;
     template <>
-    const uint8_t RTOS::ActiveObject<BLE>::mInputQueueItemSize = sizeof(uint16_t);
+    const uint8_t       _BLE::mInputQueueItemSize = sizeof(uint16_t);
     template <>
-    const size_t RTOS::ActiveObject<BLE>::mInputQueueSizeBytes = 
-                                RTOS::ActiveObject<Service::BLE>::mInputQueueItemLength 
-                                * RTOS::ActiveObject<Service::BLE>::mInputQueueItemSize;
+    const size_t        _BLE::mInputQueueSizeBytes = 
+                                        RTOS::ActiveObject<Service::BLE>::mInputQueueItemLength 
+                                        * RTOS::ActiveObject<Service::BLE>::mInputQueueItemSize;
     template <>
-    uint8_t RTOS::ActiveObject<BLE>::mInputQueueAllocation  [
-                                                                RTOS::ActiveObject<Service::BLE>::mInputQueueSizeBytes
-                                                            ] = { 0 };
+    uint8_t             _BLE::mInputQueueAllocation[
+                                        RTOS::ActiveObject<Service::BLE>::mInputQueueSizeBytes
+                                    ] = { 0 };
     template <>
-    QueueHandle_t RTOS::ActiveObject<BLE>::mInputQueue = xQueueCreate(
-                                                            mInputQueueItemLength,
-                                                            mInputQueueItemLength
-                                                        );
+    QueueHandle_t       _BLE::mInputQueue = xQueueCreate(
+                                        RTOS::ActiveObject<Service::BLE>::mInputQueueItemLength,
+                                        RTOS::ActiveObject<Service::BLE>::mInputQueueItemSize
+                                    );
+    template <>
+    TaskHandle_t        _BLE::mHandle = 0;
+    template <>
+    uint8_t             _BLE::mReceivedMsg[
+                                        RTOS::ActiveObject<Service::BLE>::mInputQueueItemSize
+                                    ] = { 0 };
 }
 
 #endif

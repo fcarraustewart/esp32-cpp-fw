@@ -12,28 +12,25 @@ namespace RTOS
     class ActiveObject
     {
     public:
-        static void Run(void * arg)
+        static void Create()
         {
-            Initialize();
-            while(1)
-                Loop();
-            End();
+            xTaskCreate(&Run, mName.c_str(), 4096, nullptr, 2, &mHandle);
         };
-        static void Initialize()
+        static void Run(void * arg)
         {
             printf("Service::%s::Initializes.\r\n", mName.c_str());
             D::Initialize();
-        };
-        static void End()
-        {
+
+            while(1)
+                Loop();
+
             printf("Service::%s::End().\r\n", mName.c_str());
             D::End();
         };
         static void Loop()
         {
-            uint8_t arg[mInputQueueItemSize];
-            if(pdTRUE == xQueueReceive(mInputQueue, (void*)arg, portMAX_DELAY))
-                D::Loop(arg);
+            if(pdTRUE == xQueueReceive(mInputQueue, (void*)mReceivedMsg, portMAX_DELAY))
+                D::Handle(mReceivedMsg);
         };
         static void Send(const uint8_t msg[])
         {
@@ -59,19 +56,25 @@ namespace RTOS
      */
     public:
     protected:
-        static const    std::string mName;                      /**< The variables used to create the queue */
-        static          uint8_t     mCountLoops;                /**< The variables used to create the queue */
-        static const    uint8_t     mInputQueueItemLength;      /**< The variables used to create the queue */
+        static const    std::string     mName;                      /**< The variables used to create the queue */
+        static          uint8_t         mCountLoops;                /**< The variables used to create the queue */
+        static const    uint8_t         mInputQueueItemLength;      /**< The variables used to create the queue */
 
         
-        static const    uint8_t     mInputQueueItemSize;        /**< The variables used to create the queue */
-        static const    size_t      mInputQueueSizeBytes;       /**< The variables used to create the queue */
-        static          uint8_t     mInputQueueAllocation[];    /**< The variables used to create the queue */
+        static const    uint8_t         mInputQueueItemSize;        /**< The variables used to create the queue */
+        static const    size_t          mInputQueueSizeBytes;       /**< The variables used to create the queue */
+        static          uint8_t         mInputQueueAllocation[];    /**< The variables used to create the queue */
 
         /** 
          * The variable used to hold the queue's data structure. 
          * */
         static          QueueHandle_t   mInputQueue;
+
+        /** 
+         * The handle used to hold the task for this ActiveObject. 
+         * */
+        static          TaskHandle_t    mHandle;
+        static          uint8_t         mReceivedMsg[];
     };
 
 }
