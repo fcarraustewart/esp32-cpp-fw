@@ -14,7 +14,20 @@ namespace Service
             /**
              * Handle arg packet.
              */
-            printf("Service::%s::Handles: %x\r\n", mName.c_str(), arg[0]);
+            switch(arg[0])
+            {
+                case 5:
+                {
+                    printf("[Service::%s\t]::Handles:\t%x. Pass to LoRa.\r\n", mName.c_str(), arg[0]);
+                    Service::LoRa::Send(arg);
+                    break;
+                }
+                default:
+                {
+                    printf("[Service::%s\t]::Handles:\t%x.\tNYI.\r\n", mName.c_str(), arg[0]);
+                    break;
+                }
+            };
         };
         static void End(){
         };
