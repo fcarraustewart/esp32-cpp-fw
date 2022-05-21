@@ -18,7 +18,7 @@ void IRAM_ATTR onTimer() {
   Service::BLE::Send((uint8_t*)&(++interruptCounter));  /**< This runs the xQueueFromISR version of Send. */
 }
 void setup() {
-  timer = timerBegin(0, 80, true);
+  timer = timerBegin(0, 2, true);
   timerAttachInterrupt(timer, &onTimer, true);
   timerAlarmWrite(timer, 1000000, true);
   timerAlarmEnable(timer);

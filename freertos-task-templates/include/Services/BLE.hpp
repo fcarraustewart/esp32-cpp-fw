@@ -18,13 +18,13 @@ namespace Service
             {
                 case 5:
                 {
-                    printf("[Service::%s\t]::Handles:\t%x. Pass to LoRa.\r\n", mName.c_str(), arg[0]);
+                    printf("[Service::%s\t]::%s():\t%x. Pass to LoRa.\r\n", mName.c_str(), __func__, arg[0]);
                     Service::LoRa::Send(arg);
                     break;
                 }
                 default:
                 {
-                    printf("[Service::%s\t]::Handles:\t%x.\tNYI.\r\n", mName.c_str(), arg[0]);
+                    printf("(%s:%d)\t[Service::%s\t]::%s():\t%x.\tNYI.\r\n",  __FILENAME__, __LINE__, mName.c_str(), __func__, arg[0]);
                     break;
                 }
             };
