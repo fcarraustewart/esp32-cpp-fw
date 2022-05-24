@@ -8,6 +8,7 @@
 #include "Services/LoRa.hpp"
 #include "Services/BLE.hpp"
 #include "MsgBroker.hpp"
+#include "Logger.hpp"
 
 static RTOS::MsgBroker M = RTOS::MsgBroker();
 
@@ -27,6 +28,9 @@ void IRAM_ATTR onTimer() {
   Service::BLE::Send((uint8_t*)&(++interruptCounter));  /**< This runs the xQueueFromISR version of Send. */
   //M << msgEE;
 }
+static  uint8_t one = 1;
+static  uint8_t other = 0xA5;
+static  double flo = 3.14f;
 void setup() {
   timer = timerBegin(0, 2, true);
   timerAttachInterrupt(timer, &onTimer, true);
@@ -34,6 +38,7 @@ void setup() {
   timerAlarmEnable(timer);
   Service::BLE::Create();
   Service::LoRa::Create();
+  Logger::Log( "[%s] WARNING!!! LOG TEST #%d. Other = 0x%x, flo = %f.",__FUNCTION__, one, other, flo );
 }
 
 void loop()
