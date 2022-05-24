@@ -46,7 +46,7 @@ class Logger
      * @brief Print log message in log file.
      */
     template<typename... TArgs>
-    void PrintLog(const char* fmt, TArgs... args);
+    static inline constexpr void PrintLog(const char* fmt, TArgs... args);
 
     /**
      * @brief Function that returns a pointer to the output stream associated to the log file
@@ -114,11 +114,11 @@ constexpr std::string Logger::GetFormattedString( const std::string& format, Arg
 template<typename... TArgs>
 constexpr void Logger::Log(const char* fmt, TArgs... args)
 {
-    Logger::GetInstance()->PrintLog(fmt, std::forward<TArgs>(args)...);
+    PrintLog(fmt, std::forward<TArgs>(args)...);
 }
 
 template<typename... TArgs>
-void Logger::PrintLog(const char* fmt, TArgs... args)
+constexpr void Logger::PrintLog(const char* fmt, TArgs... args)
 {
     printf("%s\r\n", GetFormattedString(fmt, std::forward<TArgs>(args)... ).c_str()  );
 }
