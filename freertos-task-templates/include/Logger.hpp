@@ -89,17 +89,6 @@ class Logger
     
 };
 
-std::string   operator%(std::string& result, std::string& x)
-{ 
-  
-    int size_s = std::snprintf( nullptr, 0, result.c_str(), x ) + 1;  // This step is used to calculate the required size_s. Extra space for '\0'
-    if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
-    auto size = static_cast<size_t>( size_s );
-    char buf[size];                                                   // We created a char array to populate the format %s, %d, %x, etc.
-    std::snprintf( buf, size, result.c_str(), x );
-    return std::string( buf, buf + size - 1 );                        // We don't want the '\0' inside
-}
-
 template<typename ... Args>
 constexpr std::string Logger::GetFormattedString( const std::string& format, Args ... args )
 { 
