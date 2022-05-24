@@ -5,6 +5,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include <string>
+#include "Logger.hpp"
 
 namespace RTOS
 {
@@ -18,13 +19,13 @@ namespace RTOS
         };
         static void Run(void * arg)
         {
-            printf("Service::%s::Initializes.\r\n", mName.c_str());
+            Logger::Log("Service::%s::Initializes.", mName.c_str());
             D::Initialize();
 
             while(1)
                 Loop();
 
-            printf("Service::%s::End().\r\n", mName.c_str());
+            Logger::Log("Service::%s::End().", mName.c_str());
             D::End();
         };
         static void Loop()

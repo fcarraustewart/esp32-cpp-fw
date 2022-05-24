@@ -18,7 +18,7 @@ namespace Service
             {
                 default:
                 {
-                    printf("[Service::%s\t]::Handles:\t%x.\tNYI.\r\n", mName.c_str(), arg[0]);
+                    Logger::Log("[Service::%s]::%s():\t%x.\tNYI.", mName.c_str(), __func__, arg[0]);
                     break;
                 }
             };

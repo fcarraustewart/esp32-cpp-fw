@@ -18,13 +18,13 @@ namespace Service
             {
                 case 5:
                 {
-                    printf("[Service::%s\t]::%s():\t%x. Pass to LoRa.\r\n", mName.c_str(), __func__, arg[0]);
+                    Logger::Log("[Service::%s]::%s():\t%x. Pass to LoRa.", mName.c_str(), __func__, arg[0]);
                     Service::LoRa::Send(arg);
                     break;
                 }
                 default:
                 {
-                    printf("(BLE:%d)\t[Service::%s\t]::%s():\t%x.\tNYI.\r\n", __LINE__, mName.c_str(), __func__, arg[0]);
+                    Logger::Log("[Service::%s]::%s():\t%x.\tNYI.", mName.c_str(), __func__, arg[0]);
                     break;
                 }
             };
