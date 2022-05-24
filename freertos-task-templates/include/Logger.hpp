@@ -25,24 +25,7 @@
 
 class Logger
 {
-  private:
-    /**
-     * @brief Line number.
-     * 
-     */
-    uint16_t mLineCounter;
-
-    /**
-     * @brief Timestamp formatter types. 
-     * 
-     */
-    enum TimestampFormat_t
-    {
-      FILE_NAME,
-      LOG_TIMESTAMP
-    };
-
-  private:
+  protected:
     /**
      * @brief Logger constructor. This constructor is kept private in order to prevent misusage
      */
@@ -57,7 +40,7 @@ class Logger
      * @brief Get a string as timestamp.
      * 
      */
-    std::string GetTimestamp(TimestampFormat_t format);
+    std::string GetTimestamp();
 
     /**
      * @brief Print log message in log file.
@@ -81,7 +64,19 @@ class Logger
      */
     template<typename ... Args>
     static inline constexpr std::string GetFormattedString( const std::string& format, Args ... args );
+
   public:
+    /**
+     * @brief Main log function. Only this funcion must be called. 
+     * 
+     * @tparam TArgs 
+     * @param fmt 
+     * @param args 
+     */
+    template<typename... TArgs>
+    static inline constexpr void Log(const char* fmt, TArgs... args);
+
+
     /**
      * @brief Deleted copy constructor. This is done to prevent users to create copies of the singleton
      */
@@ -92,27 +87,18 @@ class Logger
      */
     void operator=( Logger const& ) = delete;
     
-    /**
-     * @brief Main log function. Only this funcion must be called. 
-     * 
-     * @tparam TArgs 
-     * @param fmt 
-     * @param args 
-     */
-    template<typename... TArgs>
-    static inline constexpr void Log(const char* fmt, TArgs... args);
 };
+
 std::string   operator%(std::string& result, std::string& x)
 { 
   
-    int size_s = std::snprintf( nullptr, 0, result.c_str(), x ) + 1;  // Extra space for '\0'
+    int size_s = std::snprintf( nullptr, 0, result.c_str(), x ) + 1;  // This step is used to calculate the required size_s. Extra space for '\0'
     if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
     auto size = static_cast<size_t>( size_s );
     char buf[size];                                                   // We created a char array to populate the format %s, %d, %x, etc.
     std::snprintf( buf, size, result.c_str(), x );
     return std::string( buf, buf + size - 1 );                        // We don't want the '\0' inside
 }
-
 
 template<typename ... Args>
 constexpr std::string Logger::GetFormattedString( const std::string& format, Args ... args )
