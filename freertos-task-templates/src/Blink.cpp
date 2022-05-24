@@ -38,7 +38,7 @@ void setup() {
   timerAlarmEnable(timer);
   Service::BLE::Create();
   Service::LoRa::Create();
-  Logger::Log( "[%s] WARNING!!! LOG TEST #%d. Other = 0x%x, flo = %f.",__FUNCTION__, one, other, flo ); /**< outputs: [setup] WARNING!!! LOG TEST #1. Other = 0xa5, flo = 3.140000.*/
+  Logger::Log( "[%s] WARNING!!! LOG TEST #%d. Other = 0x%x, flo = %f.", __func__, one, other, flo ); /**< outputs: [setup] WARNING!!! LOG TEST #1. Other = 0xa5, flo = 3.140000.*/
 }
 
 void loop()
