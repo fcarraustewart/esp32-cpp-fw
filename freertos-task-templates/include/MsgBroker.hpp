@@ -36,6 +36,22 @@ namespace RTOS
         static void Create()
         {
         };
+
+
+
+
+
+        void operator()(int& i) const {
+            std::cout << "int: " << i; 
+        }
+
+        void operator()(float& f) const {
+            std::cout << "float: " << f;
+        }
+
+        void operator()(const std::string& s) const {
+            std::cout << "string: " << s;
+        }
     private:
 
 
