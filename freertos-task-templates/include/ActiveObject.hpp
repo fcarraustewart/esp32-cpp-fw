@@ -56,8 +56,8 @@ namespace RTOS
      *                  Member Variables:
      */
     public:
-    protected:
         static const    std::string     mName;                      /**< The variables used to create the queue */
+    protected:
         static          uint8_t         mCountLoops;                /**< The variables used to create the queue */
         static const    uint8_t         mInputQueueItemLength;      /**< The variables used to create the queue */
 

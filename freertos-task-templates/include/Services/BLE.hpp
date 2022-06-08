@@ -32,8 +32,8 @@ namespace Service
         static void End(){
         };
 
-    private:
         BLE() : RTOS::ActiveObject<BLE>(){};
+    private:
     };
 
 }
