@@ -46,23 +46,35 @@ void setup() {
   Logger::Log( "[%s] WARNING!!! LOG TEST #%d. Other = 0x%x, flo = %f.", __func__, one, other, flo ); /**< outputs: [setup] WARNING!!! LOG TEST #1. Other = 0xa5, flo = 3.140000.*/
 }
 
+
 void test()
 {
-    std::variant<int, float, std::string> intFloatString { "Hello" };
-    std::visit(overload  {
-        [](const int& i) {          std::cout << "int: " << i; },
-        [](const float& f) {        std::cout << "float: " << f; },
-        [](const std::string& s) {  std::cout << "string: " << s; }
-      },
-      intFloatString
-    ); 
+    std::variant<int, float, std::string> v1 { "Hello" };
+    std::variant<int, float, std::string> v2 { 1 };
+    std::variant<int, float, std::string> v3 { 20.0f };
+    std::visit( overload  {
+                  [](const int& i)          { Logger::Log("int: %d", i);     },
+                  [](const float& f)        { Logger::Log("float: %f", f);   },
+                  [](const std::string& s)  { Logger::Log("string: %s", s.c_str());  }
+                }, v1 ); 
+    std::visit( overload  {
+                  [](const int& i)          { Logger::Log("int: %d", i);     },
+                  [](const float& f)        { Logger::Log("float: %f", f);   },
+                  [](const std::string& s)  { Logger::Log("string: %s", s);  }
+                }, v2 ); 
+    std::visit( overload  {
+                  [](const int& i)          { Logger::Log("int: %d", i);     },
+                  [](const float& f)        { Logger::Log("float: %f", f);   },
+                  [](const std::string& s)  { Logger::Log("string: %s", s);  }
+                }, v3 ); 
 }
-           
+             
 void loop()
 {
   delay(400);
   Service::BLE::Send((uint8_t*)&msg);  
   Service::LoRa::Send((uint8_t*)&msg);  
+  test();
   delay(400);
 }
  
