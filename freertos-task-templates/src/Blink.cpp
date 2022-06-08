@@ -11,12 +11,9 @@
 #include "Logger.hpp"
 #include <string>
 #include <variant>
-
-template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
-template<class... Ts> overload(Ts...) -> overload<Ts...>;
+#include <vector>
 
 static RTOS::MsgBroker M = RTOS::MsgBroker();
-
 static volatile uint16_t interruptCounter;
 static hw_timer_t * timer = NULL;
 
@@ -33,17 +30,55 @@ void IRAM_ATTR onTimer() {
   Service::BLE::Send((uint8_t*)&(++interruptCounter));  /**< This runs the xQueueFromISR version of Send. */
   //M << msgEE;
 }
-static  uint8_t one = 1;
-static  uint8_t other = 0xA5;
-static  double flo = 3.14f;
+
+template<class... Ts> 
+struct overload : Ts... 
+{ 
+  using Ts::operator()...; 
+};
+template<class... Ts> 
+overload(Ts...) -> overload<Ts...>;
+
+void CreationOfVariantVectorWithServices()
+{
+  /**
+   * @brief 
+   * 
+   * Variants templates indicate types that the variable variant can take.
+   * Overload indicates the lambda done as operator() to each of the types you are interested in.
+   * visit uses the operator() on the correct type that was loaded to the variant at the time visit is used.
+   * 
+   * 
+   */
+    std::vector<  std::variant<   Service::BLE,   Service::LoRa   >>      // 1
+                  vecVariant = {  Service::BLE{}, Service::LoRa{} };
+  
+    for (auto& v: vecVariant){
+      
+        std::visit( overload  { 
+                      /* 
+                        One of these lambdas will be called for each type in vecVariant. 
+                      */
+                      [](const Service::BLE& x)         { Logger::Log(  "Initted: %s",      x.mName.c_str());   x.Create();  },
+                      [](const Service::LoRa& x)        { Logger::Log(  "Initted: %s",      x.mName.c_str());   x.Create(); }
+                    }, 
+                      /* 
+                        The element of the vecVariant to which the lambda will be applied. 
+                      */
+                    v 
+                  
+                  ); 
+
+    }
+  
+}
+
 void setup() {
+  CreationOfVariantVectorWithServices();
   timer = timerBegin(0, 2, true);
   timerAttachInterrupt(timer, &onTimer, true);
   timerAlarmWrite(timer, 1000000, true);
   timerAlarmEnable(timer);
-  Service::BLE::Create();
-  Service::LoRa::Create();
-  Logger::Log( "[%s] WARNING!!! LOG TEST #%d. Other = 0x%x, flo = %f.", __func__, one, other, flo ); /**< outputs: [setup] WARNING!!! LOG TEST #1. Other = 0xa5, flo = 3.140000.*/
 }
 
 
