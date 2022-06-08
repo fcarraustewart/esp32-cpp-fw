@@ -2,6 +2,7 @@
 #define MSGBROKER__H_H
 #include "Services/BLE.hpp"
 #include "Services/LoRa.hpp"
+#include "Logger.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
@@ -42,15 +43,16 @@ namespace RTOS
 
 
         void operator()(int& i) const {
-            std::cout << "int: " << i; 
+            Logger::Log("float: %d",i);
         }
 
         void operator()(float& f) const {
-            std::cout << "float: " << f;
+            Logger::Log("float: %f",f);
         }
 
         void operator()(const std::string& s) const {
-            std::cout << "string: " << s;
+            Logger::Log("str: %s",s);
+            ;
         }
     private:
 
