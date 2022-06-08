@@ -59,8 +59,14 @@ void CreationOfVariantVectorWithServices()
                       /* 
                         One of these lambdas will be called for each type in vecVariant. 
                       */
-                      [](const Service::BLE& x)         { Logger::Log(  "Initted: %s",      x.mName.c_str());   x.Create();  },
-                      [](const Service::LoRa& x)        { Logger::Log(  "Initted: %s",      x.mName.c_str());   x.Create(); }
+                      [](const Service::BLE& x)         { 
+                                                          Logger::Log(  "Initializing: %s", x.mName.c_str());   
+                                                          x.Create(); 
+                                                        },
+                      [](const Service::LoRa& x)        { 
+                                                          Logger::Log(  "Initializing: %s", x.mName.c_str());   
+                                                          x.Create(); 
+                                                        }
                     }, 
                       /* 
                         The element of the vecVariant to which the lambda will be applied. 
