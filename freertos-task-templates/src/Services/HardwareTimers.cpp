@@ -12,12 +12,14 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]){
             try
             {
                 // The parameter of at(i) should be i = 1 because that's the position where we put LoRa in the variant.
-                Service::LoRa x = std::get<Service::LoRa>(System::mSystemServicesRegistered.at(2));
+                auto x = std::get<Service::BLE>(System::mSystemServicesRegistered.at(0));
                 x.Send(arg);
+                Logger::Log("Obtained a pointer at = 0x%08x", &x);
+                Logger::Log("System::mSystemServicesRegistered at = 0x%08x", &System::mSystemServicesRegistered);
             }
             catch (std::bad_variant_access const& ex)
             {
-                Logger::Log("Bad Variant Access.");
+                Logger::Log("Bad Variant Access -> %s.", ex.what());
             }
             
             break;

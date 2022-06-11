@@ -27,9 +27,11 @@ public:
              *
              *
              */
+            Logger::Log("mSystemServicesRegistered Address a pointer at = 0x%08x", &mSystemServicesRegistered);
 
             for (auto &v : mSystemServicesRegistered)
             {
+                Logger::Log("v Address a pointer at = 0x%08x", &v);
 
                 std::visit( overload{/*
                                     One of these lambdas will be called for each type in mSystemServicesRegistered.
@@ -37,16 +39,19 @@ public:
                                     [](const Service::BLE &x)
                                     {
                                         Logger::Log("Initializing: %s", x.mName.c_str());
+                                        Logger::Log("Address a pointer at = 0x%08x", &x);
                                         x.Create();
                                     },
                                     [](const Service::LoRa &x)
                                     {
                                         Logger::Log("Initializing: %s", x.mName.c_str());
+                                        Logger::Log("Address a pointer at = 0x%08x", &x);
                                         x.Create();
                                     },
                                     [](const Service::HardwareTimers &x)
                                     {
                                         Logger::Log("Initializing: %s", x.mName.c_str());
+                                        Logger::Log("Address at = 0x%08x", &x);
                                         x.Create();
                                     }},
                             /*
