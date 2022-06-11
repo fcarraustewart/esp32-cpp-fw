@@ -15,28 +15,30 @@ void System::Create()
 
         for (auto &v : mSystemServicesRegistered)
         {
-            Logger::Log("v Address a pointer at = 0x%08x", &v);
-
             std::visit( overload{/*
                                 One of these lambdas will be called for each type in mSystemServicesRegistered.
                                 */
-                                [](const Service::BLE &x)
+                                [](const std::variant<_REGISTERED_SERVICES> &x)
                                 {
-                                    Logger::Log("Initializing: %s", x.mName.c_str());
-                                    Logger::Log("Address a pointer at = 0x%08x", &x);
-                                    x.Create();
-                                },
-                                [](const Service::LoRa &x)
-                                {
-                                    Logger::Log("Initializing: %s", x.mName.c_str());
-                                    Logger::Log("Address a pointer at = 0x%08x", &x);
-                                    x.Create();
-                                },
-                                [](const Service::HardwareTimers &x)
-                                {
-                                    Logger::Log("Initializing: %s", x.mName.c_str());
-                                    Logger::Log("Address at = 0x%08x", &x);
-                                    x.Create();
+                                    try     {    
+                                        auto service = std::get<Service::BLE>(x);
+                                        Logger::Log("Initializing: %s", service.mName.c_str());
+                                        service.Create();
+                                    }
+                                    catch   (std::bad_variant_access const& ex){}
+                                    try     { 
+                                        auto service = std::get<Service::LoRa>(x);
+                                        Logger::Log("Initializing: %s", service.mName.c_str());
+                                        service.Create();
+                                    }
+                                    catch   (std::bad_variant_access const& ex){}
+                                    try     { 
+                                        auto service = std::get<Service::HardwareTimers>(x);  
+                                        Logger::Log("Initializing: %s", service.mName.c_str());
+                                        service.Create();
+                                    } 
+                                    catch   (std::bad_variant_access const& ex){}
+                                                         
                                 }},
                         /*
                             The element of the mSystemServicesRegistered to which the lambda will be applied.
