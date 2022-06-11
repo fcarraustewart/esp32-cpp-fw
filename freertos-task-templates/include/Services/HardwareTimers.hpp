@@ -1,6 +1,8 @@
 #ifndef SERVICE_HARDWARE_TIMERS__H_H
 #define SERVICE_HARDWARE_TIMERS__H_H
 #include "ActiveObject.hpp"
+#include "esp32-hal-timer.h"
+
 /**
  * Customize the static methods of an RTOS::ActiveObject
  */
@@ -9,7 +11,13 @@ namespace Service
     class HardwareTimers : public RTOS::ActiveObject<HardwareTimers>
     {
     public:
-        static void Initialize(){};
+        static void Initialize()
+        {
+            mTimer = timerBegin(0, 2, true);
+            timerAttachInterrupt(mTimer, &Service::HardwareTimers::OnTimer, true);
+            timerAlarmWrite(mTimer, 1000000, true);
+            timerAlarmEnable(mTimer);
+        };
         static void Handle(const uint8_t arg[]){
             /**
              * Handle arg packet.
@@ -19,7 +27,7 @@ namespace Service
                 case 5:
                 {
                     Logger::Log("[Service::%s]::%s():\t%x. Pass to LoRa.", mName.c_str(), __func__, arg[0]);
-                    //Service::LoRa::Send(arg);
+                    Service::LoRa::Send(arg);
                     break;
                 }
                 default:
@@ -31,9 +39,16 @@ namespace Service
         };
         static void End(){
         };
+        static void OnTimer()
+        {
+            Service::HardwareTimers::Send((uint8_t *)&(++mInterruptCounter)); /**< This runs the xQueueFromISR version of Send. */
+        };
 
         HardwareTimers() : RTOS::ActiveObject<HardwareTimers>(){};
     private:
+        static volatile uint16_t    mInterruptCounter;
+        static hw_timer_t           *mTimer;
+
     };
 
 }
@@ -72,5 +87,17 @@ namespace Service
                                         RTOS::ActiveObject<Service::HardwareTimers>::mInputQueueItemSize
                                     ] = { 0 };
 }
+
+/** 
+ * Build specific Service static members
+ *  Otherwise it complains that the RTOS 
+ * activeObject does not have these members, which is true.
+*/
+namespace Service
+{
+    volatile uint16_t   HardwareTimers::mInterruptCounter = 0;
+    hw_timer_t*         HardwareTimers::mTimer = nullptr;
+}
+
 
 #endif
