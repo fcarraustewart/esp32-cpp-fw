@@ -4,13 +4,10 @@
  */
 
 #include <Arduino.h>
-#include "Services/LoRa.hpp"
-#include "Services/BLE.hpp"
+#include "System.hpp"
 #include "MsgBroker.hpp"
 #include "Logger.hpp"
 #include <string>
-#include <variant>
-#include <vector>
 
 static RTOS::MsgBroker M = RTOS::MsgBroker();
 static volatile uint16_t interruptCounter;
@@ -31,56 +28,9 @@ void IRAM_ATTR onTimer()
   // M << msgEE;
 }
 
-template <class... Ts>
-struct overload : Ts...
-{
-  using Ts::operator()...;
-};
-template <class... Ts>
-overload(Ts...) -> overload<Ts...>;
-
-void CreationOfVariantVectorWithServices()
-{
-  /**
-   * @brief
-   *
-   * Variants templates indicate types that the variable variant can take.
-   * Overload indicates the lambda done as operator() to each of the types you are interested in.
-   * visit uses the operator() on the correct type that was loaded to the variant at the time visit is used.
-   *
-   *
-   */
-  std::vector<std::variant<Service::BLE, Service::LoRa>> // 1
-      vecVariant = {Service::BLE{}, Service::LoRa{}};
-
-  for (auto &v : vecVariant)
-  {
-
-    std::visit(overload{/*
-                          One of these lambdas will be called for each type in vecVariant.
-                        */
-                        [](const Service::BLE &x)
-                        {
-                          Logger::Log("Initializing: %s", x.mName.c_str());
-                          x.Create();
-                        },
-                        [](const Service::LoRa &x)
-                        {
-                          Logger::Log("Initializing: %s", x.mName.c_str());
-                          x.Create();
-                        }},
-               /*
-                 The element of the vecVariant to which the lambda will be applied.
-               */
-               v
-
-    );
-  }
-}
-
 void setup()
 {
-  CreationOfVariantVectorWithServices();
+  System::Create();
   timer = timerBegin(0, 2, true);
   timerAttachInterrupt(timer, &onTimer, true);
   timerAlarmWrite(timer, 1000000, true);
