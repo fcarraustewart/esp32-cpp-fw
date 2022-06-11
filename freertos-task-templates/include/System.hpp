@@ -8,14 +8,6 @@
 #include "Services/HardwareTimers.hpp"
 #include "Utils/overload.hpp"
 
-static const uint16_t msg = 0xAAAA;
-static const RTOS::MsgBroker::Message msgEE = {
-    .mSource = 0,
-    .mDestination = 1,
-    .mEvent = RTOS::MsgBroker::Event::BLEConnected,
-    .mLength = 1,
-    .mPayload = {0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE},
-};
 
 class System {
 #define _REGISTERED_SERVICES    Service::BLE,   Service::LoRa,  Service::HardwareTimers
@@ -39,7 +31,7 @@ public:
             for (auto &v : mSystemServicesRegistered)
             {
 
-                std::visit(overload{/*
+                std::visit( overload{/*
                                     One of these lambdas will be called for each type in mSystemServicesRegistered.
                                     */
                                     [](const Service::BLE &x)
@@ -57,19 +49,18 @@ public:
                                         Logger::Log("Initializing: %s", x.mName.c_str());
                                         x.Create();
                                     }},
-                        /*
-                            The element of the mSystemServicesRegistered to which the lambda will be applied.
-                        */
-                        v
-
-                );
+                            /*
+                                The element of the mSystemServicesRegistered to which the lambda will be applied.
+                            */
+                            v);
 
             }
+            /*
+                Msg
+            */
             mMsgBroker.Create();
     }
 };
 
-std::vector<std::variant<_REGISTERED_SERVICES>> System::mSystemServicesRegistered = {REGISTERED_SERVICES};
-RTOS::MsgBroker System::mMsgBroker = RTOS::MsgBroker();
 
 #endif
