@@ -34,14 +34,7 @@ namespace RTOS
     public:
         
         //template<typename... TArgs>
-        static void Create()
-        {
-        
-        };
-
-
-
-
+        static void Create();
 
         void operator()(int& i) const {
             Logger::Log("float: %d",i);
