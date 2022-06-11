@@ -10,6 +10,9 @@ class System {
 #define _REGISTERED_SERVICES    Service::BLE, Service::LoRa
 #define REGISTERED_SERVICES     Service::BLE{}, Service::LoRa{}
 public:
+    static RTOS::MsgBroker mMsgBroker;
+    static std::vector<std::variant<_REGISTERED_SERVICES>> mSystemServicesRegistered;
+public:
     static void Create()
     {            
             /**
@@ -21,7 +24,6 @@ public:
              *
              *
              */
-            std::vector<std::variant<_REGISTERED_SERVICES>> mSystemServicesRegistered = {REGISTERED_SERVICES};
 
             for (auto &v : mSystemServicesRegistered)
             {
@@ -48,5 +50,8 @@ public:
             }
     }
 };
+
+std::vector<std::variant<_REGISTERED_SERVICES>> System::mSystemServicesRegistered = {REGISTERED_SERVICES};
+RTOS::MsgBroker System::mMsgBroker = RTOS::MsgBroker();
 
 #endif
