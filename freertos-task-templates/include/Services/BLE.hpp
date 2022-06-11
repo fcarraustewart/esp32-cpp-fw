@@ -19,7 +19,7 @@ namespace Service
                 case 5:
                 {
                     Logger::Log("[Service::%s]::%s():\t%x. Pass to LoRa.", mName.c_str(), __func__, arg[0]);
-                    Service::LoRa::Send(arg);
+                    //Service::LoRa::Send(arg);
                     break;
                 }
                 default:

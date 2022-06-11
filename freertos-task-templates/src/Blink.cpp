@@ -5,22 +5,11 @@
 
 #include <Arduino.h>
 #include "System.hpp"
-#include "MsgBroker.hpp"
 #include "Logger.hpp"
 #include <string>
 
-static RTOS::MsgBroker M = RTOS::MsgBroker();
 static volatile uint16_t interruptCounter;
 static hw_timer_t *timer = NULL;
-
-static const uint16_t msg = 0xAAAA;
-static const RTOS::MsgBroker::Message msgEE = {
-    .mSource = 0,
-    .mDestination = 1,
-    .mEvent = RTOS::MsgBroker::Event::BLEConnected,
-    .mLength = 1,
-    .mPayload = {0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE},
-};
 
 void IRAM_ATTR onTimer()
 {
