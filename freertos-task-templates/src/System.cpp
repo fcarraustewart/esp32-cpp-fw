@@ -39,6 +39,12 @@ void System::Create()
                                         service.Create();
                                     } 
                                     catch   (std::bad_variant_access const& ex){}
+                                    try     { 
+                                        auto service = std::get<Service::LEDs>(x);  
+                                        Logger::Log("Initializing: %s", service.mName.c_str());
+                                        service.Create();
+                                    } 
+                                    catch   (std::bad_variant_access const& ex){}
                                                          
                                 }},
                         /*
