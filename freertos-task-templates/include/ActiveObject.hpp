@@ -16,15 +16,7 @@ namespace RTOS
     public:
         static void Create()
         {
-            //xTaskCreate(&Run, mName.c_str(), 4096, nullptr, 2, &mHandle);
-            std::thread([](){
-                Logger::Log("Service::%s From std::thread()........", mName.c_str());
-                
-                while(1){ 
-                    Run(nullptr);
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-                }
-            }).detach();
+            xTaskCreate(&Run, mName.c_str(), 4096, nullptr, 2, &mHandle);
         };
         static void Run(void * arg)
         {

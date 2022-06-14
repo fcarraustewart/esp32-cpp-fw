@@ -1,5 +1,7 @@
 #include "System.hpp"
 #include <exception>
+
+static uint8_t messageForLEDsService[2]={ADD_TO_BLINK_COLOR_OPCODE, 0x00};
 void Service::HardwareTimers::Handle(const uint8_t arg[]){
     /**
      * Handle arg packet.
@@ -8,14 +10,23 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]){
     {
         case 5:
         {
-            Logger::Log("[Service::%s]::%s():\t%x. Pass to LoRa.", mName.c_str(), __func__, arg[0]);
+
+            try
+            {
+                // The parameter of at(i) should be i = 1 because that's the position where we put LoRa in the variant.
+                auto x = std::get<Service::LEDs>(System::mSystemServicesRegistered.at(3));
+                messageForLEDsService[0]=RESET_BLINK_COLOR_OPCODE;
+                x.Send(messageForLEDsService);
+            }
+            catch (std::bad_variant_access const& ex)
+            {
+                Logger::Log("Bad Variant Access -> %s.", ex.what());
+            }
             try
             {
                 // The parameter of at(i) should be i = 1 because that's the position where we put LoRa in the variant.
                 auto x = std::get<Service::BLE>(System::mSystemServicesRegistered.at(0));
                 x.Send(arg);
-                Logger::Log("Obtained a pointer at = 0x%08x", &x);
-                Logger::Log("System::mSystemServicesRegistered at = 0x%08x", &System::mSystemServicesRegistered);
             }
             catch (std::bad_variant_access const& ex)
             {

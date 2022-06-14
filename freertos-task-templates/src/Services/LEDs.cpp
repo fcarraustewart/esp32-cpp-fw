@@ -8,45 +8,25 @@
 bool gReverseDirection = false;
 CRGBPalette16 gPal;
 static CRGB leds[NUM_LEDS];
+static uint8_t heat[NUM_LEDS];
 void Service::LEDs::Initialize()
 {
     // Uncomment/edit one of the following lines for your leds arrangement.
     // ## Clockless types ##
     FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
-    while(1){
-        // Turn the LED on, then pause
-        for(uint8_t i=0;i<NUM_LEDS;i++)
-            leds[i] = CRGB::Red;
-        FastLED.show();
-        delay(500);
-        // Now turn the LED off, then pause
-        for(uint8_t i=0;i<NUM_LEDS;i++)
-            leds[i] = CRGB::Black;
-        FastLED.show();
-        delay(500);
-    }
 }
 void Service::LEDs::Handle(const uint8_t arg[]){
     /**
      * Handle arg packet.
      */
+
     switch(arg[0])
     {
-        case 5:
+        case ADD_TO_BLINK_COLOR_OPCODE:
         {
-            Logger::Log("[Service::%s]::%s():\t%x. Pass to LoRa.", mName.c_str(), __func__, arg[0]);
-            try
-            {
-                // The parameter of at(i) should be i = 1 because that's the position where we put LoRa in the variant.
-                auto x = std::get<Service::BLE>(System::mSystemServicesRegistered.at(0));
-                Logger::Log("Obtained a pointer at = 0x%08x", &x);
-                Logger::Log("System::mSystemServicesRegistered at = 0x%08x", &System::mSystemServicesRegistered);
-            }
-            catch (std::bad_variant_access const& ex)
-            {
-                Logger::Log("Bad Variant Access -> %s.", ex.what());
-            }
-            
+            for(uint8_t i=0;i<NUM_LEDS;i++)
+                leds[i] = leds[i].addToRGB(arg[1]);
+            FastLED.show();
             break;
         }
         default:
@@ -147,37 +127,35 @@ namespace Service
 
 void Service::LEDs::Fire2012WithPalette()
 {
-// Array of temperature readings at each simulation cell
-  static uint8_t heat[NUM_LEDS];
 
-  // Step 1.  Cool down every cell a little
+    // Step 1.  Cool down every cell a little
     for( int i = 0; i < NUM_LEDS; i++) {
-      heat[i] = qsub8( heat[i],  random8(0, ((COOLING * 10) / NUM_LEDS) + 2));
+        heat[i] = qsub8( heat[i],  random8(0, ((COOLING * 10) / NUM_LEDS) + 2));
     }
   
     // Step 2.  Heat from each cell drifts 'up' and diffuses a little
     for( int k= NUM_LEDS - 1; k >= 2; k--) {
-      heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2] ) / 3;
+        heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2] ) / 3;
     }
     
     // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
     if( random8() < SPARKING ) {
-      int y = random8(7);
-      heat[y] = qadd8( heat[y], random8(160,255) );
+        int y = random8(7);
+        heat[y] = qadd8( heat[y], random8(160,255) );
     }
 
     // Step 4.  Map from heat cells to LED colors
     for( int j = 0; j < NUM_LEDS; j++) {
-      // Scale the heat value from 0-255 down to 0-240
-      // for best results with color palettes.
-      uint8_t colorindex = scale8( heat[j], 240);
-      CRGB color = ColorFromPalette( gPal, colorindex);
-      int pixelnumber;
-      if( gReverseDirection ) {
-        pixelnumber = (NUM_LEDS-1) - j;
-      } else {
-        pixelnumber = j;
-      }
-      leds[pixelnumber] = color;
+        // Scale the heat value from 0-255 down to 0-240
+        // for best results with color palettes.
+        uint8_t colorindex = scale8( heat[j], 240);
+        CRGB color = ColorFromPalette( gPal, colorindex);
+        int pixelnumber;
+        if( gReverseDirection ) {
+            pixelnumber = (NUM_LEDS-1) - j;
+        } else {
+            pixelnumber = j;
+        }
+        leds[pixelnumber] = color;
     }
 }

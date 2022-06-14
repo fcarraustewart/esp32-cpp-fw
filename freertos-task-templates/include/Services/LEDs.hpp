@@ -1,7 +1,7 @@
 #ifndef SERVICE_LEDs__H_H
 #define SERVICE_LEDs__H_H
 #include "ActiveObject.hpp"
-
+#define ADD_TO_BLINK_COLOR_OPCODE 0xAA
 /**
  * Customize the static methods of an RTOS::ActiveObject
  */
