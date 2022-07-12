@@ -48,6 +48,13 @@ void RTOS::MsgBroker::Create()
     //  itself onto it. 
     //      This sounds scalable and the best part is that it can 
     //  actually be resolved in the ActiveObject's source code
+
+    //      Also, we can remove the Create() method that only exists to control
+    //  execution of rtos tasks. This can pass to the constructor and we can use
+    //  a pre-init-common-message to actually START the system after it is constructed, 
+    //  and lets all activeObjects run loose. 
+    //      The idea is that we block them waiting for pre-init-ready 
+    //  at the beginning of their rtos task.
     
     if(bleServiceRegistered)
         Logger::Log("MsgBroker registers Service::BLE");
