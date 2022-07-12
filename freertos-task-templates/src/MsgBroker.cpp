@@ -34,6 +34,20 @@ void RTOS::MsgBroker::Create()
         {
         }
     }
+    // FIXME:
+    //      Instead of using bool flags here, we can make the activeObjects 
+    //  a vector of pointers rather than being objects themselves
+    //  and checking for if nullptr == RTOS::ActiveObject<Service::BLE>* 
+    //  is much easier and less cumbersome. 
+    
+    //      In the construction processes we can populate this vector as needed.
+    
+    //      Another idea is to actually use a registeredServices vector that
+    //  gets passed around to every ActiveObject constructed and, when under
+    //  construction, every ActiveObject uses this vector to register 
+    //  itself onto it. 
+    //      This sounds scalable and the best part is that it can 
+    //  actually be resolved in the ActiveObject's source code
     
     if(bleServiceRegistered)
         Logger::Log("MsgBroker registers Service::BLE");
