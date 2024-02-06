@@ -27,6 +27,17 @@ void Service::LEDs::Handle(const uint8_t arg[]){
             for(uint8_t i=0;i<NUM_LEDS;i++)
                 leds[i] = leds[i].addToRGB(arg[1]);
             FastLED.show();
+            Logger::Log("[Service::%s]::%s():\t%x. Blink", mName.c_str(), __func__, arg[0]);
+
+            break;
+        }
+        case RESET_BLINK_COLOR_OPCODE:
+        {
+            for(uint8_t i=0;i<NUM_LEDS;i++)
+                leds[i] = 0;
+            FastLED.show();
+            Logger::Log("[Service::%s]::%s():\t%x. Turn Off", mName.c_str(), __func__, arg[0]);
+
             break;
         }
         default:
