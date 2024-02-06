@@ -25,9 +25,9 @@ namespace RTOS
         {
             uint8_t     mSource;
             uint8_t     mDestination;
-            Event       mEvent;
             uint16_t    mLength;
             payload_t   mPayload;
+            Event       mEvent;
 
             //Message(Event& event, payload_t& p, uint16_t& l){}; Constructor?
         };
@@ -35,19 +35,6 @@ namespace RTOS
         
         //template<typename... TArgs>
         static void Create();
-
-        void operator()(int& i) const {
-            Logger::Log("float: %d",i);
-        }
-
-        void operator()(float& f) const {
-            Logger::Log("float: %f",f);
-        }
-
-        void operator()(const std::string& s) const {
-            Logger::Log("str: %s",s);
-            ;
-        }
     private:
 
 
@@ -64,3 +51,64 @@ namespace RTOS
 }
 
 #endif
+
+
+
+
+
+
+
+
+/*
+
+    union example_union {
+        struct {
+            uint32_t EXAMPLE_FIELD_0 : 8;
+            uint32_t EXAMPLE_FIELD_1 : 8;
+            uint32_t EXAMPLE_FIELD_2 : 8;
+            uint32_t RESERVED : 8;
+        } bytes;
+        struct {
+            uint32_t BIT_0 : 1;
+            uint32_t BIT_1 : 1;
+            uint32_t BIT_2 : 1;
+            uint32_t BIT_3 : 1;
+            uint32_t BIT_4 : 1;
+            uint32_t BIT_5 : 1;
+            uint32_t BIT_6 : 1;
+            uint32_t BIT_7 : 1;
+            uint32_t BIT_8 : 1; 
+            uint32_t BIT_9 : 1; 
+            uint32_t BIT_10 : 1; 
+            uint32_t BIT_11 : 1; 
+            uint32_t BIT_12 : 1; 
+            uint32_t BIT_13 : 1; 
+            uint32_t BIT_14 : 1; 
+            uint32_t BIT_15 : 1;
+            uint32_t BIT_16 : 1;
+            uint32_t BIT_17 : 1;
+            uint32_t BIT_18 : 1;
+            uint32_t BIT_19 : 1;
+            uint32_t BIT_20 : 1;
+            uint32_t BIT_21 : 1;
+            uint32_t BIT_22 : 1;
+            uint32_t BIT_23 : 1;
+            uint32_t RESERVED : 8;
+        } bits;
+        uint32_t u32All;
+    };
+  union RTOS::MsgBroker::example_union cosa;
+
+  cosa.u32All = 0;
+  Logger::Log("[Service::%s]::%s():\t cosa es %X.", "loop", __func__, cosa.u32All);
+  cosa.bits.BIT_0 = 1;
+  cosa.bits.BIT_4 = 1;
+  cosa.bits.BIT_7  = 1;
+  cosa.bits.BIT_23  = 1;
+  Logger::Log("[Service::%s]::%s():\t cosa es %X.", "loop", __func__, cosa.u32All);
+  cosa.bytes.EXAMPLE_FIELD_1 = 55 ;
+  Logger::Log("[Service::%s]::%s():\t cosa es %X.", "loop", __func__, cosa.u32All);
+
+
+
+*/

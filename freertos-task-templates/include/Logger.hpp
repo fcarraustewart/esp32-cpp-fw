@@ -76,6 +76,13 @@ class Logger
     template<typename... TArgs>
     static inline constexpr void Log(const char* fmt, TArgs... args);
 
+    void operator()(int& i) const {
+        Logger::Log("int: %d",i);
+    }
+
+    void operator()(float& f) const {
+        Logger::Log("float: %f",f);
+    }
 
     /**
      * @brief Deleted copy constructor. This is done to prevent users to create copies of the singleton
