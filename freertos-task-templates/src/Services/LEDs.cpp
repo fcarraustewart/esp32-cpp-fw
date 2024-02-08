@@ -3,7 +3,7 @@
 #include <FastLED.h>
 #define NUM_LEDS 12
 #define DATA_PIN 13
-#define BRIGHTNESS  200
+#define BRIGHTNESS  255
 #define FRAMES_PER_SECOND 60
 bool gReverseDirection = false;
 CRGBPalette16 gPal;
@@ -37,6 +37,14 @@ void Service::LEDs::Handle(const uint8_t arg[]){
                 leds[i] = 0;
             FastLED.show();
             Logger::Log("[Service::%s]::%s():\t%x. Turn Off", mName.c_str(), __func__, arg[0]);
+
+            break;
+        }
+        case FIRE_BLINK_COLOR_OPCODE:
+        {
+            Fire2012WithPalette();
+            FastLED.show();
+            Logger::Log("[Service::%s]::%s():\t%x. Fire", mName.c_str(), __func__, arg[0]);
 
             break;
         }
