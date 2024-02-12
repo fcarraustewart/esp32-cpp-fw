@@ -10,3 +10,5 @@ QueueCreateStatic didn't work for this setup but it should for esp idf.
 See include/activeobject.hpp this is the templated class that should be inherited by every concrete activeobject: (still wip)
 
 https://github.com/fcarraustewart/esp32-c--tests/blob/master/freertos-task-templates/include/ActiveObject.hpp
+For example:
+BLE.hpp specializes and customizes ActiveObject.hpp. no virtual functions were used here.
