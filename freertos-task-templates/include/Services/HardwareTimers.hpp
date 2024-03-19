@@ -17,6 +17,8 @@ namespace Service
             timerAttachInterrupt(mTimer, &Service::HardwareTimers::OnTimer, true);
             timerAlarmWrite(mTimer, 1000000, true);
             timerAlarmEnable(mTimer);
+        // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
+        // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();
         };
         static void Handle(const uint8_t arg[]);
         static void End(){

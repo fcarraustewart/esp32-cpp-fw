@@ -9,7 +9,10 @@ namespace Service
     class BLE : public RTOS::ActiveObject<BLE>
     {
     public:
-        static void Initialize(){};
+        static void Initialize(){
+        // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
+        // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();
+        };
         static void Handle(const uint8_t arg[]);
         static void End(){
         };

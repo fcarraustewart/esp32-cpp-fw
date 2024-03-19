@@ -79,3 +79,42 @@ RTOS::MsgBroker& operator<<(RTOS::MsgBroker& obj, RTOS::MsgBroker::Message& msg)
 
     return obj;
 }
+
+void RTOS::MsgBroker::PostEvent(const Event& event)
+{
+    // TODO: Try to create a Dispatch table with REGISTERED_SERVICES at compile time.
+    switch(event)
+    {
+        Logger::Log("Event Post: %d", event);
+        case Event::BLEConnected:
+        {
+            // Dispatch to every service suscribed to BLE STATE notifications
+            /*
+             Kind of https://stackoverflow.com/questions/48017/what-is-a-jump-table
+             Assembly style:
+                    distribute:
+                        ld r2, event & suscribedServicesIDs; // or rotate, somekind of math multiplexing
+                        andi r2, suscribedServicesIDs; 
+                        jp r2; // jumptable
+                        jp sendToBLEService;
+                        jp distribute;
+                        jp distribute;
+                        jp distribute;
+                        jp distribute; // rather than distribute : NoOperation;
+                 C/C++ style:                   https://gamedev.stackexchange.com/questions/38127/pointers-to-member-functions-in-an-event-dispatcher
+                    (void*)(array) = {registered_fn_pointers,registered_fn_pointers,...};
+                    (void*)array_of_pointers_to_functions[event&suscribedServicesIDs]();
+            */
+            // Debug
+            Logger::Log("Event BLEConnected ocurred. \
+            Dispatching messages to each of the suscribed services.");
+            break;
+        }
+        case Event::LoRaConnected:
+        {
+            break;
+        }
+        default:
+        break;
+    }
+}

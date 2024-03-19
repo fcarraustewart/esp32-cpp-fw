@@ -36,6 +36,7 @@ namespace RTOS
         };
         static void Send(const uint8_t msg[])
         {
+            // This context ownership is part of each child class
             if( xPortInIsrContext() ) /**< Does this work in another platform rather than ESP32? */
             {    
                 BaseType_t xHigherPriorityTaskWoken;

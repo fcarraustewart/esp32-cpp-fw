@@ -32,7 +32,7 @@ namespace RTOS
             //Message(Event& event, payload_t& p, uint16_t& l){}; Constructor?
         };
     public:
-        
+        static void PostEvent(const Event& event);
         //template<typename... TArgs>
         static void Create();
     private:
