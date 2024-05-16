@@ -7,12 +7,13 @@
 #include "Services/BLE.hpp"
 #include "Services/HardwareTimers.hpp"
 #include "Services/LEDs.hpp"
+#include "Services/internalGPIOs.hpp"
 #include "Utils/overload.hpp"
 
 
 class System {
-#define _REGISTERED_SERVICES    Service::BLE,   Service::LoRa,  Service::HardwareTimers, Service::LEDs
-#define REGISTERED_SERVICES     Service::BLE{}, Service::LoRa{}, Service::HardwareTimers{}, Service::LEDs{}
+#define _REGISTERED_SERVICES    Service::BLE,   Service::LoRa,  Service::HardwareTimers, Service::LEDs, Service::internalGPIOs
+#define REGISTERED_SERVICES     Service::BLE{}, Service::LoRa{}, Service::HardwareTimers{}, Service::LEDs{}, Service::internalGPIOs{}
 public:
     static RTOS::MsgBroker mMsgBroker;
     static std::vector<std::variant<_REGISTERED_SERVICES>> mSystemServicesRegistered;
