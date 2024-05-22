@@ -4,16 +4,6 @@
 /**
  * Brief:
  * This test code shows how to configure gpio and how to use gpio interrupt.
- *
- * GPIO status:
- * GPIO18: output (ESP32C2/ESP32H2 uses GPIO8 as the second output pin)
- * GPIO19: output (ESP32C2/ESP32H2 uses GPIO9 as the second output pin)
- * GPIO4:  input, pulled up, interrupt from rising edge and falling edge
- * GPIO5:  input, pulled up, interrupt from rising edge.
- *
- * Note. These are the default GPIO pins to be used in the example. You can
- * change IO pins in menuconfig.
- *
  * Test:
  * Connect GPIO18(8) with GPIO4
  * Connect GPIO19(9) with GPIO5
@@ -99,6 +89,10 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
      */
     switch(arg[0])
     {
+        case 3:
+        {
+            Logger::Log("[Service::%s]::%s():\t%x.\tNYI.", mName.c_str(), __func__, arg[0]);
+        } break;
         default:
         {
             Logger::Log("[Service::%s]::%s():\t%x.\tNYI.", mName.c_str(), __func__, arg[0]);

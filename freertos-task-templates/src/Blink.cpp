@@ -23,8 +23,7 @@ void setup()
 
 void loop()
 {
-  delay(400);
   Service::BLE::Send((uint8_t *)&msg);
   Service::LoRa::Send((uint8_t *)&msg);
-  delay(400);
+  delay(1000);
 }

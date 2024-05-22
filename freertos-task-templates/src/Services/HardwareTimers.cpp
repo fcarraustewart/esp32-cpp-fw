@@ -1,7 +1,19 @@
 #include "System.hpp"
 #include <exception>
 
+#define TIMER_DIVIDER 64
 static uint8_t messageForLEDsService[2]={ADD_TO_BLINK_COLOR_OPCODE, 0x00};
+
+void Service::HardwareTimers::Initialize()
+{
+    mTimer = timerBegin(0, TIMER_DIVIDER, true);
+    timerAttachInterrupt(mTimer, &Service::HardwareTimers::OnTimer, true);
+    timerAlarmWrite(mTimer, 1000000, true);
+    timerAlarmEnable(mTimer);
+// #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
+// System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();
+}
+
 void Service::HardwareTimers::Handle(const uint8_t arg[]){
     /**
      * Handle arg packet.
