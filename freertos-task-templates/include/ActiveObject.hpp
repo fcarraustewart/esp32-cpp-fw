@@ -6,6 +6,7 @@
 #include "freertos/task.h"
 #include <string>
 #include "Logger.hpp"
+#include "IPC.hpp"
 #include <thread>
 #include <queue>
 namespace RTOS
@@ -49,10 +50,11 @@ namespace RTOS
                 xQueueSend(mInputQueue,         (void*) msg, portMAX_DELAY);
             }
         };
-
+        IPC mIPC;
     private:
     protected:
-        ActiveObject(){};
+        ActiveObject() 
+            : mIPC(mName, nullptr){};
 
     /**
      *                  Member Variables:
