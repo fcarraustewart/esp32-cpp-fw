@@ -38,15 +38,19 @@ namespace Service
         enum class TimerState
         {
             Done,
-            Set
+            Idle,
+            Running
         };
-        class TimerEvt
+        struct TimerEvt
         {
-            TimerMode mMode;
-            TimerUnit mUnit;
-            TimerState mState;
+            TimerEvt()
+                : mMode(TimerMode::OneShot), mUnit(TimerUnit::us), mState(TimerState::Idle), mCountUp(1){}
+            TimerMode   mMode;
+            TimerUnit   mUnit;
+            TimerState  mState;
+            uint64_t    mCountUp;
         };
-        
+        TimerEvt reboundTimer;  
     };
 
 }
