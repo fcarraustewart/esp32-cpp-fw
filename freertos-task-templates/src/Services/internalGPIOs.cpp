@@ -30,11 +30,11 @@ static QueueHandle_t gpio_evt_queue = NULL;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
-    static uint8_t messageForinternalGPIOs[2]={0x00, 0x00};
+    static uint8_t messageForinternalGPIOs[6]={0x00, 0x00, 0x00, 0x00, 0x00};
     uint32_t gpio_num = (uint32_t) arg;
 
-    messageForinternalGPIOs[0]=0x00;
-    messageForinternalGPIOs[1]=gpio_num;
+    messageForinternalGPIOs[0]=0x03;
+    messageForinternalGPIOs[1]=(uint8_t)gpio_num;
     Service::internalGPIOs::Send((uint8_t *)&messageForinternalGPIOs);
 }
 
@@ -64,7 +64,8 @@ void Service::internalGPIOs::Initialize()
     //set as input mode
     io_conf.mode = GPIO_MODE_INPUT;
     //enable pull-up mode
-    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
     gpio_config(&io_conf);
 
     //change gpio interrupt type for one pin
@@ -77,10 +78,6 @@ void Service::internalGPIOs::Initialize()
     //hook isr handler for specific gpio pin
     gpio_isr_handler_add(GPIO_INPUT_IO_1, gpio_isr_handler, (void*) GPIO_INPUT_IO_1);
 
-    //remove isr handler for gpio number.
-    gpio_isr_handler_remove(GPIO_INPUT_IO_0);
-    //hook isr handler for specific gpio pin again
-    gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
 }
 
 void Service::internalGPIOs::Handle(const uint8_t arg[]){
@@ -89,9 +86,60 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
      */
     switch(arg[0])
     {
+        case 2:
+        {
+            //// In order to turn it back on: hook isr handler for specific gpio pin again
+            gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
+            gpio_isr_handler_add(GPIO_INPUT_IO_1, gpio_isr_handler, (void*) GPIO_INPUT_IO_1);
+        }   break;
         case 3:
         {
-            Logger::Log("[Service::%s]::%s():\t%x.\tNYI.", mName.c_str(), __func__, arg[0]);
+            Logger::Log("[Service::%s]::%s():\t%x.\t Got button interrupt. Will request a rebound timer.", mName.c_str(), __func__, arg[0]);
+
+            switch (arg[1])
+            {
+                case GPIO_INPUT_IO_0:
+                {
+                    Logger::Log("[Service::%s]::%s().\t Got button 0x%x. Disabling ISR for this button.", mName.c_str(), __func__, GPIO_INPUT_IO_0);
+
+                    //remove isr handler for gpio number.
+                    gpio_isr_handler_remove(GPIO_INPUT_IO_0);
+                    // Can we empty fifo queue mQueue?
+                    UBaseType_t queueSize = uxQueueMessagesWaiting(mInputQueue);
+                    if(queueSize != 0)
+                        xQueueReset(mInputQueue);
+
+                }   break;
+                case GPIO_INPUT_IO_1:
+                {
+                    Logger::Log("[Service::%s]::%s().\t Got button %x. Disabling ISR for this button.", mName.c_str(), __func__, GPIO_INPUT_IO_1);
+
+                    //remove isr handler for gpio number.
+                    gpio_isr_handler_remove(GPIO_INPUT_IO_1);
+                    // Can we empty fifo queue mQueue?
+                    UBaseType_t queueSize = uxQueueMessagesWaiting(mInputQueue);
+                    if(queueSize != 0)
+                        xQueueReset(mInputQueue);
+                    
+                }   break;
+                
+                default:
+                    break;
+            }
+            Logger::Log("[Service::%s]::%s().\t. Requesting HwTimers Rebound Timer = 100us.", mName.c_str(), __func__);
+            uint8_t msgRequestReboundTimer[4] = { 0xA5, 0x00, 0x01, 0x02 };
+            Service::HardwareTimers::Send(msgRequestReboundTimer);
+
+            Logger::Log("[Service::%s]::%s().\t. Subscribe to topic 100us timers.", mName.c_str(), __func__);
+            System::mMsgBroker.mIPC.subscribeTo("Timer100us", [](const Message& message) {
+                Logger::Log("[Service::%s].\t. Subscriber received message on topic. \n\t\t Topic: %s. \n\t\t Publisher: %s", mName.c_str(), message.topic, message.publisher);   
+                try {
+                    Logger::Log("[Service::%s].\t. \n\t\t Data Received = %s.", mName.c_str(), message.getEventData<std::string>("key"));   
+                } catch (const std::bad_any_cast&) {
+                    Logger::Log("[Service::%s].\t. Bad any cast inside lambda function subscribeTo().", mName.c_str());    
+                }
+            });
+            
         } break;
         default:
         {

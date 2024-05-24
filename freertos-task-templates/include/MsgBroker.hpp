@@ -7,6 +7,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include <string>
+#include "IPC.hpp"
 // https://commschamp.github.io/comms_protocols_cpp/ see this for further development
 namespace RTOS
 {
@@ -15,21 +16,11 @@ namespace RTOS
     public:
         static const    uint16_t            cMaxPayloadLength = 10;
         using           payload_t = uint8_t[cMaxPayloadLength];
-        
+
         enum class Event
         {
             BLEConnected,
             LoRaConnected,
-        };
-        struct __attribute__ ((packed)) Message
-        {
-            uint8_t     mSource;
-            uint8_t     mDestination;
-            uint16_t    mLength;
-            payload_t   mPayload;
-            Event       mEvent;
-
-            //Message(Event& event, payload_t& p, uint16_t& l){}; Constructor?
         };
     public:
         static void PostEvent(const Event& event);
@@ -44,6 +35,8 @@ namespace RTOS
      *                  Member Variables:
      */
     public:
+        static          MsgBrokerT      mMsgBrokerT;
+        static          IPC             mIPC;
 
     protected:
     };
