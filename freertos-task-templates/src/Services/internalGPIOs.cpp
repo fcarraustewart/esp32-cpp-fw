@@ -126,19 +126,35 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
                 default:
                     break;
             }
-            Logger::Log("[Service::%s]::%s().\t. Requesting HwTimers Rebound Timer = 100us.", mName.c_str(), __func__);
-            uint8_t msgRequestReboundTimer[4] = { 0xA5, 0x00, 0x01, 0x02 };
-            Service::HardwareTimers::Send(msgRequestReboundTimer);
+            Logger::Log("[Service::%s]::%s().\t Requesting HwTimers Rebound Timer = 100us.", mName.c_str(), __func__);
+            
+            uint8_t                             msgRequestReboundTimer[RTOS::MsgBroker::cMaxPayloadLength]; //RTOS::MsgBroker::payload_t
+            Service::HardwareTimers::TimerEvt*  timer_requested =   new Service::HardwareTimers::TimerEvt();
+            Message*                            topic_timer_100us = new Message("Timer100us", "HardwareTimers");
 
-            Logger::Log("[Service::%s]::%s().\t. Subscribe to topic 100us timers.", mName.c_str(), __func__);
+            msgRequestReboundTimer[0]   = REQUEST_TIMER_MSG_PUBLISHED_CMD;
+            timer_requested->mCountUp   = 16;
+            timer_requested->mMode      = Service::HardwareTimers::TimerMode::Periodic;
+            timer_requested->mState     = Service::HardwareTimers::TimerState::Idle;
+            timer_requested->mUnit      = Service::HardwareTimers::TimerUnit::us;
+            
+            memcpy(&msgRequestReboundTimer[1],                                                  (uint8_t*)timer_requested,                  sizeof(Service::HardwareTimers::TimerEvt));
+            memcpy(&(msgRequestReboundTimer[1])+sizeof(Service::HardwareTimers::TimerEvt) + 1,  (uint8_t*)topic_timer_100us->mTopic.c_str(), topic_timer_100us->mTopic.size());
+
+            delete timer_requested;
+            delete topic_timer_100us;
+
+            Logger::Log("[Service::%s]::%s().\t Subscribe to mTopic 100us timers.", mName.c_str(), __func__);
             System::mMsgBroker.mIPC.subscribeTo("Timer100us", [](const Message& message) {
-                Logger::Log("[Service::%s].\t. Subscriber received message on topic. \n\t\t Topic: %s. \n\t\t Publisher: %s", mName.c_str(), message.topic, message.publisher);   
+                Logger::Log("[Service::%s].\t Subscriber received message on mTopic. \n\t\t Topic: %s. \n\t\t Publisher: %s", mName.c_str(), message.mTopic, message.mPublisher);   
                 try {
-                    Logger::Log("[Service::%s].\t. \n\t\t Data Received = %s.", mName.c_str(), message.getEventData<std::string>("key"));   
+                    Logger::Log("[Service::%s].\t \n\t\t Data Received = %s.", mName.c_str(), message.getEventData<std::string>("key"));   
                 } catch (const std::bad_any_cast&) {
-                    Logger::Log("[Service::%s].\t. Bad any cast inside lambda function subscribeTo().", mName.c_str());    
+                    Logger::Log("[Service::%s].\t Bad any cast inside lambda function subscribeTo().", mName.c_str());    
                 }
             });
+
+            Service::HardwareTimers::Send(msgRequestReboundTimer);
             
         } break;
         default:

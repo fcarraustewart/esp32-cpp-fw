@@ -20,6 +20,40 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]){
      */
     switch(arg[0])
     {
+        case REQUEST_TIMER_MSG_PUBLISHED_CMD:
+        {
+            /*
+             Start publishing procedure:
+                * Save variables from the request
+                    * We received a request and topic to be published: - Maybe from a Service or MsgBroker
+                        * Parse request: 
+                        * TimerEvent = arg[1..7]
+                        * Message = arg[8..14]
+                    * Create a new TimerEvt in the array
+                        * Set TimerCountUp value
+                        * Set TimerMode either [OneShot, Periodic]
+                        * Set TimerUnit [ms,us,s]
+                        * Move state of timer to Running
+                    * Install an interrupt accordingly to the new TimerEvt and topic requested
+                    * Next interrupts
+                        * Decrease TimerCountUp value
+                        * Check TimerMode to see how many times we need to publish repetitions
+                        * Finish and change state if needed
+                    * Check for out of bounds
+            */
+
+            Service::HardwareTimers::TimerEvt*  timer_requested =   new Service::HardwareTimers::TimerEvt();
+            Message*                            topic_timer_100us = new Message("Timer100us", "HardwareTimers");
+
+            Logger::Log("[Service::%s]::%s().\t Got Message.", mName.c_str(), __func__);
+            for(size_t i; i<RTOS::MsgBroker::cMaxPayloadLength; i+=4)
+                Logger::Log("[Service::%s]::%s().\t payload[%d,%d,%d,%d] = %c%c%c%c = 0x%x%x%x%x.", mName.c_str(), __func__, i,i+1,i+2,i+3, arg[i], arg[i+1], arg[i+2], arg[i+3], arg[i], arg[i+1], arg[i+2], arg[i+3]);
+            Logger::Log("[Service::%s]::%s().\t Start Publishing procedure to %s.", mName.c_str(), __func__, topic_timer_100us->mTopic.c_str());
+            
+            delete timer_requested;
+            delete topic_timer_100us;
+
+        }  break;
         case 5:
         {
             try
@@ -72,9 +106,9 @@ namespace Service
     template <>
     uint8_t             _HardwareTimers::mCountLoops = 0;
     template <>
-    const uint8_t       _HardwareTimers::mInputQueueItemLength = 16;
+    const uint8_t       _HardwareTimers::mInputQueueItemLength = RTOS::MsgBroker::cMaxPayloadLength;
     template <>
-    const uint8_t       _HardwareTimers::mInputQueueItemSize = sizeof(uint16_t);
+    const uint8_t       _HardwareTimers::mInputQueueItemSize = sizeof(uint8_t);
     template <>
     const size_t        _HardwareTimers::mInputQueueSizeBytes = 
                                         RTOS::ActiveObject<Service::HardwareTimers>::mInputQueueItemLength 

@@ -2,9 +2,9 @@
 #define SERVICE_HARDWARE_TIMERS__H_H
 #include "ActiveObject.hpp"
 #include "esp32-hal-timer.h"
-/**
- * Customize the static methods of an RTOS::ActiveObject
- */
+
+#define REQUEST_TIMER_MSG_PUBLISHED_CMD 0xA5
+
 namespace Service
 {
     class HardwareTimers : public RTOS::ActiveObject<HardwareTimers>
@@ -16,7 +16,8 @@ namespace Service
         };
         static void OnTimer()
         {
-            Service::HardwareTimers::Send((uint8_t *)&(++mInterruptCounter)); /**< This runs the xQueueFromISR version of Send. */
+            static const RTOS::MsgBroker::payload_t msg = {0x05};
+            Service::HardwareTimers::Send((uint8_t *)&(msg)); /**< This runs the xQueueFromISR version of Send. */
         };
 
         HardwareTimers() : RTOS::ActiveObject<HardwareTimers>(){};

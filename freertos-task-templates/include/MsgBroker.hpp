@@ -14,7 +14,7 @@ namespace RTOS
     class MsgBroker
     {
     public:
-        static const    uint16_t            cMaxPayloadLength = 10;
+        static const    uint16_t            cMaxPayloadLength = 255;
         using           payload_t = uint8_t[cMaxPayloadLength];
 
         enum class Event
