@@ -1,6 +1,7 @@
 // Message.h
 #pragma once
 #include <string>
+#include <cstring>
 #include <array>
 #include <any>
 #include <algorithm>
@@ -31,4 +32,6 @@ public:
         }
         throw std::out_of_range("Key not found");
     }
+    size_t serialize(uint8_t* buffer, size_t bufferSize) const;
+    bool deserialize(const uint8_t* buffer, size_t bufferSize);
 };
