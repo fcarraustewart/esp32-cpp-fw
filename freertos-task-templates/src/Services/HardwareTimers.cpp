@@ -52,19 +52,6 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]){
         }
         default:
         {
-            try
-            {
-                // The parameter of at(i) should be i = 1 because that's the position where we put LoRa in the variant.
-                auto x = std::get<Service::LEDs>(System::mSystemServicesRegistered.at(3));
-                messageForLEDsService[0]=arg[0] % 2 == 0 ? ADD_TO_BLINK_COLOR_OPCODE : RESET_BLINK_COLOR_OPCODE;
-                messageForLEDsService[1]=arg[0];
-                Logger::Log("[Service::%s]::%s():\t%x. Pass to LEDs.", mName.c_str(), __func__, arg[0]);
-                x.Send(messageForLEDsService);
-            }
-            catch (std::bad_variant_access const& ex)
-            {
-                Logger::Log("Bad Variant Access -> %s.", ex.what());
-            }            
             Logger::Log("[Service::%s]::%s():\t%x.\tNYI.", mName.c_str(), __func__, arg[0]);
             break;
         }
