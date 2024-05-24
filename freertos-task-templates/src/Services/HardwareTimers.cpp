@@ -43,13 +43,25 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]){
             */
 
             Service::HardwareTimers::TimerEvt*  timer_requested =   new Service::HardwareTimers::TimerEvt();
-            Message*                            topic_timer_100us = new Message("Timer100us", "HardwareTimers");
+            Message*                            topic_timer_100us = new Message("", "");
 
             Logger::Log("[Service::%s]::%s().\t Got Message.", mName.c_str(), __func__);
-            for(size_t i; i<RTOS::MsgBroker::cMaxPayloadLength; i+=4)
+            for(size_t i=1; i<RTOS::MsgBroker::cMaxPayloadLength-1; i+=4)
                 Logger::Log("[Service::%s]::%s().\t payload[%d,%d,%d,%d] = %c%c%c%c = 0x%x%x%x%x.", mName.c_str(), __func__, i,i+1,i+2,i+3, arg[i], arg[i+1], arg[i+2], arg[i+3], arg[i], arg[i+1], arg[i+2], arg[i+3]);
-            Logger::Log("[Service::%s]::%s().\t Start Publishing procedure to %s.", mName.c_str(), __func__, topic_timer_100us->mTopic.c_str());
-            
+
+            if(topic_timer_100us->deserialize(&arg[1], RTOS::MsgBroker::cMaxPayloadLength-1))
+            {
+                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us->mTopic.c_str());
+                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us->mPublisher.c_str());
+                Logger::Log("[Service::%s]::%s().\t deserialized %d.", mName.c_str(), __func__, topic_timer_100us->mDataCount);
+                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us->getEventData<std::string>("Cmd").c_str());
+                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us->getEventData<std::string>("mCountUp").c_str());    
+                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us->getEventData<std::string>("mState").c_str()); 
+                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us->getEventData<std::string>("mMode").c_str()); 
+                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us->getEventData<std::string>("mUnit").c_str());    
+                 
+            }
+
             delete timer_requested;
             delete topic_timer_100us;
 
@@ -106,9 +118,9 @@ namespace Service
     template <>
     uint8_t             _HardwareTimers::mCountLoops = 0;
     template <>
-    const uint8_t       _HardwareTimers::mInputQueueItemLength = RTOS::MsgBroker::cMaxPayloadLength;
+    const uint8_t       _HardwareTimers::mInputQueueItemLength = 16;
     template <>
-    const uint8_t       _HardwareTimers::mInputQueueItemSize = sizeof(uint8_t);
+    const uint8_t       _HardwareTimers::mInputQueueItemSize = RTOS::MsgBroker::cMaxPayloadLength;
     template <>
     const size_t        _HardwareTimers::mInputQueueSizeBytes = 
                                         RTOS::ActiveObject<Service::HardwareTimers>::mInputQueueItemLength 

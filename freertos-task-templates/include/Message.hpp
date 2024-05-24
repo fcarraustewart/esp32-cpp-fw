@@ -17,9 +17,13 @@ public:
         : mTopic(mTopic), mPublisher(mPublisher), mDataCount(0) {}
 
     template<typename T>
-    void addEventData(const std::string& key, T value) {
+    int addEventData(const std::string& key, T value) {
         if (mDataCount < mEventData.size()) {
             mEventData[mDataCount++] = {key, value};
+            return 0;
+        }
+        else {
+            return -1;
         }
     }
 

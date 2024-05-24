@@ -1,4 +1,5 @@
 #include "Message.hpp"
+#include "Logger.hpp"
 
 size_t Message::serialize(uint8_t* buffer, size_t bufferSize) const {
     size_t offset = 0;
@@ -48,7 +49,7 @@ size_t Message::serialize(uint8_t* buffer, size_t bufferSize) const {
             std::memcpy(buffer + offset, strValue.c_str(), valueSize);
             offset += valueSize;
         } catch (const std::bad_any_cast&) {
-            // Handle error
+            Logger::Log("[Message.cpp].\t ERROR: Caught Exception: Bad Any Cast at serialize().");   
             return 0;
         }
     }
@@ -76,14 +77,15 @@ bool Message::deserialize(const uint8_t* buffer, size_t bufferSize) {
     if (offset + publisherSize > bufferSize) return false;
     mPublisher = std::string(reinterpret_cast<const char*>(buffer + offset), publisherSize);
     offset += publisherSize;
-
-    // Deserialize mEventData count
+ 
+    // Deserialize mEventData count, this is the Message received DataCount
+    size_t receivedMessageDataCount = 0;
     if (offset + sizeof(mDataCount) > bufferSize) return false;
-    std::memcpy(&mDataCount, buffer + offset, sizeof(mDataCount));
+    std::memcpy(&receivedMessageDataCount, buffer + offset, sizeof(mDataCount));
     offset += sizeof(mDataCount);
 
     // Deserialize mEventData
-    for (size_t i = 0; i < mDataCount; ++i) {
+    for (size_t i = 0; i < receivedMessageDataCount; ++i) {
         // Deserialize key
         size_t keySize;
         if (offset + sizeof(keySize) > bufferSize) return false;
@@ -103,7 +105,7 @@ bool Message::deserialize(const uint8_t* buffer, size_t bufferSize) {
         std::string value(reinterpret_cast<const char*>(buffer + offset), valueSize);
         offset += valueSize;
 
-        addEventData(key, value);
+        addEventData(key, value); // This increments mDataCount
     }
 
     return true;

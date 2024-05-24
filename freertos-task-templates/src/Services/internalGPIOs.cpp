@@ -126,6 +126,7 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
                 default:
                     break;
             }
+
             Logger::Log("[Service::%s]::%s().\t Requesting HwTimers Rebound Timer = 100us.", mName.c_str(), __func__);
             
             uint8_t                             msgRequestReboundTimer[RTOS::MsgBroker::cMaxPayloadLength]; //RTOS::MsgBroker::payload_t
@@ -133,13 +134,18 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
             Message*                            topic_timer_100us = new Message("Timer100us", "HardwareTimers");
 
             msgRequestReboundTimer[0]   = REQUEST_TIMER_MSG_PUBLISHED_CMD;
-            timer_requested->mCountUp   = 16;
-            timer_requested->mMode      = Service::HardwareTimers::TimerMode::Periodic;
-            timer_requested->mState     = Service::HardwareTimers::TimerState::Idle;
-            timer_requested->mUnit      = Service::HardwareTimers::TimerUnit::us;
+            uint64_t mCountUp   = 16;
+            uint8_t mMode      = (uint8_t)Service::HardwareTimers::TimerMode::Periodic;
+            uint8_t mState     = (uint8_t)Service::HardwareTimers::TimerState::Idle;
+            uint8_t mUnit      = (uint8_t)Service::HardwareTimers::TimerUnit::us;
             
-            memcpy(&msgRequestReboundTimer[1],                                                  (uint8_t*)timer_requested,                  sizeof(Service::HardwareTimers::TimerEvt));
-            memcpy(&(msgRequestReboundTimer[1])+sizeof(Service::HardwareTimers::TimerEvt) + 1,  (uint8_t*)topic_timer_100us->mTopic.c_str(), topic_timer_100us->mTopic.size());
+            int err = topic_timer_100us->addEventData("Cmd",    std::to_string(REQUEST_TIMER_MSG_PUBLISHED_CMD));
+            err = topic_timer_100us->addEventData("mCountUp",   std::to_string(mCountUp));
+            err = topic_timer_100us->addEventData("mMode",      std::to_string(mMode));
+            err = topic_timer_100us->addEventData("mState",     std::to_string(mState));
+            err = topic_timer_100us->addEventData("mUnit",      std::to_string(mUnit));
+            
+            size_t size = topic_timer_100us->serialize(msgRequestReboundTimer+1, sizeof(msgRequestReboundTimer)-1);
 
             delete timer_requested;
             delete topic_timer_100us;
@@ -154,7 +160,16 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
                 }
             });
 
-            Service::HardwareTimers::Send(msgRequestReboundTimer);
+            // Send Msg
+            if (size > 0) {
+                Service::HardwareTimers::Send(msgRequestReboundTimer);
+            } else
+            {   
+                if(err==0)
+                    Logger::Log("[Service::%s].\t Good addEventData().", mName.c_str());   
+                Logger::Log("[Service::%s].\t Error SENDING Service::HardwareTimers::Send(msgRequestReboundTimer).", mName.c_str());   
+            }
+
             
         } break;
         default:
