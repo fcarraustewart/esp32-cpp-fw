@@ -69,7 +69,7 @@ void RTOS::MsgBroker::Create()
 RTOS::MsgBroker& operator<<(RTOS::MsgBroker& obj, Message& msg)
 {
 
-    switch( msg.dataCount )
+    switch( msg.mDataCount )
     {
         default:
         {

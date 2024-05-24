@@ -10,7 +10,7 @@ void MsgBrokerT::registerSubscriber(const std::string& topic, Subscriber* subscr
 }
 
 void MsgBrokerT::publish(const Message& message) {
-    const auto& topic = message.topic;
+    const auto& topic = message.mTopic;
     for (size_t i = 0; i < subscriberCount; ++i) {
         if (subscribers[i].topic == topic) {
             subscribers[i].subscriber->receive(message);
