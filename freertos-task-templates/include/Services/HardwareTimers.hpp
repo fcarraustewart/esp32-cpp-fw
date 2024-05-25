@@ -12,8 +12,7 @@ namespace Service
     public:
         static void Initialize();
         static void Handle(const uint8_t arg[]);
-        static void End(){
-        };
+        static void End(){};
         static void OnTimer()
         {
             static const RTOS::MsgBroker::payload_t msg = {0x05};
@@ -21,9 +20,6 @@ namespace Service
         };
 
         HardwareTimers() : RTOS::ActiveObject<HardwareTimers>(){};
-    private:
-        static volatile uint16_t    mInterruptCounter;
-        static hw_timer_t           *mTimer;
     public:
         enum class TimerMode
         {
@@ -52,6 +48,13 @@ namespace Service
             uint64_t    mCountUp;
         };
         TimerEvt reboundTimer;  
+
+    private:
+        static volatile uint16_t    mInterruptCounter;
+        static hw_timer_t           *mTimer;
+        static std::array<std::pair<uint64_t, TimerEvt>, 10> mEventScheduler;  // Fixed size array
+
+        
     };
 
 }

@@ -135,7 +135,7 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
 
             msgRequestReboundTimer[0]   = REQUEST_TIMER_MSG_PUBLISHED_CMD;
             uint64_t mCountUp   = 16;
-            uint8_t mMode      = (uint8_t)Service::HardwareTimers::TimerMode::Periodic;
+            uint8_t mMode      = (uint8_t)Service::HardwareTimers::TimerMode::OneShot;
             uint8_t mState     = (uint8_t)Service::HardwareTimers::TimerState::Idle;
             uint8_t mUnit      = (uint8_t)Service::HardwareTimers::TimerUnit::us;
             
@@ -154,7 +154,7 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
             System::mMsgBroker.mIPC.subscribeTo("Timer100us", [](const Message& message) {
                 Logger::Log("[Service::%s].\t Subscriber received message on mTopic. \n\t\t Topic: %s. \n\t\t Publisher: %s", mName.c_str(), message.mTopic, message.mPublisher);   
                 try {
-                    Logger::Log("[Service::%s].\t \n\t\t Data Received = %s.", mName.c_str(), message.getEventData<std::string>("key"));   
+                    //Logger::Log("[Service::%s].\t \n\t\t Data Received = %s.", mName.c_str(), message.getEventData<std::string>("key"));   
                 } catch (const std::bad_any_cast&) {
                     Logger::Log("[Service::%s].\t Bad any cast inside lambda function subscribeTo().", mName.c_str());    
                 }
