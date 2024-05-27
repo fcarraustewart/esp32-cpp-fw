@@ -33,7 +33,7 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
     static uint8_t messageForinternalGPIOs[6]={0x00, 0x00, 0x00, 0x00, 0x00};
     uint32_t gpio_num = (uint32_t) arg;
 
-    messageForinternalGPIOs[0]=0x03;
+    messageForinternalGPIOs[0]=BUTTON_EVT_CMD;
     messageForinternalGPIOs[1]=(uint8_t)gpio_num;
     Service::internalGPIOs::Send((uint8_t *)&messageForinternalGPIOs);
 }
@@ -86,17 +86,20 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
      */
     switch(arg[0])
     {
-        case 2:
+        case REBOUND_TIMEUP_CMD:
         {
             //// In order to turn it back on: hook isr handler for specific gpio pin again
             gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
             gpio_isr_handler_add(GPIO_INPUT_IO_1, gpio_isr_handler, (void*) GPIO_INPUT_IO_1);
+            Logger::Log("[Service::%s]::%s().\t Got REBOUND_TIMEUP_CMD.", mName.c_str(), __func__);
+
+            // Unsubscribe off of the rebound timer Timer100us topic HardwareTimers
         }   break;
-        case 3:
+        case BUTTON_EVT_CMD:
         {
             Logger::Log("[Service::%s]::%s():\t%x.\t Got button interrupt. Will request a rebound timer.", mName.c_str(), __func__, arg[0]);
-
-            switch (arg[1])
+            uint8_t ButtonID = arg[1];
+            switch (ButtonID)
             {
                 case GPIO_INPUT_IO_0:
                 {
@@ -134,7 +137,7 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
             Message*                            topic_timer_100us = new Message("Timer100us", "HardwareTimers");
 
             msgRequestReboundTimer[0]   = REQUEST_TIMER_MSG_PUBLISHED_CMD;
-            uint64_t mCountUp   = 16;
+            uint64_t mCountUp   = 2;
             uint8_t mMode      = (uint8_t)Service::HardwareTimers::TimerMode::OneShot;
             uint8_t mState     = (uint8_t)Service::HardwareTimers::TimerState::Idle;
             uint8_t mUnit      = (uint8_t)Service::HardwareTimers::TimerUnit::us;
@@ -144,6 +147,7 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
             err = topic_timer_100us->addEventData("mMode",      std::to_string(mMode));
             err = topic_timer_100us->addEventData("mState",     std::to_string(mState));
             err = topic_timer_100us->addEventData("mUnit",      std::to_string(mUnit));
+            err = topic_timer_100us->addEventData("ButtonID",   std::to_string(arg[1]));
             
             size_t size = topic_timer_100us->serialize(msgRequestReboundTimer+1, sizeof(msgRequestReboundTimer)-1);
 
@@ -151,10 +155,14 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
             delete topic_timer_100us;
 
             Logger::Log("[Service::%s]::%s().\t Subscribe to mTopic 100us timers.", mName.c_str(), __func__);
-            System::mMsgBroker.mIPC.subscribeTo("Timer100us", [](const Message& message) {
-                Logger::Log("[Service::%s].\t Subscriber received message on mTopic. \n\t\t Topic: %s. \n\t\t Publisher: %s", mName.c_str(), message.mTopic, message.mPublisher);   
+            System::mMsgBroker.mIPC.subscribeTo("Timer100us", [&ButtonID](const Message& message) {
+                Logger::Log("[Service::%s]: Subscriber received message.", mName.c_str());   
                 try {
-                    //Logger::Log("[Service::%s].\t \n\t\t Data Received = %s.", mName.c_str(), message.getEventData<std::string>("key"));   
+                    // thought: Message var is not actually needed from inside this lambda. Since you can capture all the info needed.
+                    uint8_t msgReboundTimerDone[Service::internalGPIOs::mInputQueueItemSize] = {REBOUND_TIMEUP_CMD, ButtonID};
+                    Service::internalGPIOs::Send(msgReboundTimerDone);
+
+                    // Unsubscribe from following messages. / >?
                 } catch (const std::bad_any_cast&) {
                     Logger::Log("[Service::%s].\t Bad any cast inside lambda function subscribeTo().", mName.c_str());    
                 }

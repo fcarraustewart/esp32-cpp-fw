@@ -48,41 +48,42 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]){
             */
 
             Logger::Log("[Service::%s]::%s().\t Got Message.", mName.c_str(), __func__);
-            for(size_t i=1; i<RTOS::MsgBroker::cMaxPayloadLength-1; i+=4)
-                Logger::Log("[Service::%s]::%s().\t payload[%d,%d,%d,%d] = %c%c%c%c = 0x%x%x%x%x.", mName.c_str(), __func__, i,i+1,i+2,i+3, arg[i], arg[i+1], arg[i+2], arg[i+3], arg[i], arg[i+1], arg[i+2], arg[i+3]);
 
             if(topic_timer_100us.deserialize(&arg[1], RTOS::MsgBroker::cMaxPayloadLength-1))
             {
-                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us.mTopic.c_str());
-                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us.mPublisher.c_str());
-                Logger::Log("[Service::%s]::%s().\t deserialized %d.", mName.c_str(), __func__, topic_timer_100us.mDataCount);
-                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us.getEventData<std::string>("Cmd").c_str());
-                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us.getEventData<std::string>("mCountUp").c_str());    
-                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us.getEventData<std::string>("mState").c_str()); 
-                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us.getEventData<std::string>("mMode").c_str()); 
-                Logger::Log("[Service::%s]::%s().\t deserialized %s.", mName.c_str(), __func__, topic_timer_100us.getEventData<std::string>("mUnit").c_str());    
-                 
+
+                TimerEvt timer_event_requested;
+                timer_event_requested.mCountUp = atoi(topic_timer_100us.getEventData<std::string>("mCountUp").c_str());
+                timer_event_requested.mState =  TimerState::Running; // Start counting this event from now on at 5.
+                timer_event_requested.mMode =   TimerMode::OneShot; // TODO: topic_timer_100us.getEventData<std::string>("mMode")
+                timer_event_requested.mUnit =   TimerUnit::us; // topic_timer_100us.getEventData<std::string>("mUnit") at 5 for testing.
+                
+                if(mEventScheduledCount < 10) {
+                    // Schedule the event:
+                    mEventScheduler[0].first = 0 ;
+                    mEventScheduler[0].second = timer_event_requested ;
+
+                    Logger::Log("[Service::%s]::%s().\t Scheduling: %d: mCountUp = %d", mName.c_str(), __func__, mEventScheduledCount, (int)mEventScheduler[mEventScheduledCount].second.mCountUp);
+                    //mEventScheduledCount++;
+                } else {
+                    Logger::Log("[Service::%s]::%s().\t Error: mEventScheduler full 0x%x.", mName.c_str(), __func__, mEventScheduledCount);
+                }
+                
             }
-
-            timer_requested.mState = TimerState::Running;
-            counter_requested = timer_requested.mCountUp;
-            mEventScheduler.at(0).first = counter_requested;
-            mEventScheduler.at(0).second = timer_requested;
-
+            
         }  break;
         case 5:
         {
             // Timer100us
             // Iterate through the list
-            for(auto event : mEventScheduler) {
-                counter_requested = mEventScheduler.at(0).first; // TODO: use event instead
-                timer_requested = mEventScheduler.at(0).second; // TODO: use event instead
-
+            for(auto& event : mEventScheduler) {
+                uint64_t counter_requested = event.first;
+                TimerEvt timer_requested = event.second;
                 if(timer_requested.mState == TimerState::Running && timer_requested.mUnit == TimerUnit::us) {
-                    if(counter_requested > 0) {
-                        counter_requested--;
+                    if(counter_requested < timer_requested.mCountUp) {
+                        counter_requested++;
                     }   
-                    if(counter_requested == 0) {
+                    if(counter_requested == timer_requested.mCountUp) {
                         // Event finished, go ahead an publish the notification:
                         Message msg = Message("Timer100us", "HardwareTimers");
                         int err = msg.addEventData("Cmd",    std::to_string(REQUEST_TIMER_MSG_PUBLISHED_CMD));
@@ -90,48 +91,21 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]){
                         err = msg.addEventData("mMode",      std::to_string((uint8_t)timer_requested.mMode));
                         err = msg.addEventData("mState",     std::to_string((uint8_t)timer_requested.mState));
                         err = msg.addEventData("mUnit",      std::to_string((uint8_t)timer_requested.mUnit));
-                        System::mMsgBroker.mIPC.publishEvent( "Timer100us", msg );
 
                         if(timer_requested.mMode == TimerMode::Periodic) {
-                            counter_requested = timer_requested.mCountUp;
+                            counter_requested = 0;
                         } 
                         else {
                             timer_requested.mState = TimerState::Done;
                             Logger::Log("[Service::%s]::%s().\t Timer Done and published %s.", mName.c_str(), __func__, msg.mTopic.c_str());
-                            break;
                         }
+
+                        System::mMsgBroker.mIPC.publishEvent( "Timer100us", msg );
                     }
-                    mEventScheduler.at(0).first = counter_requested;// TODO: use event instead
-                    mEventScheduler.at(0).second = timer_requested;// TODO: use event instead
+                    event = {counter_requested, timer_requested}; // Save the updated variables
                 }
 
-            }               
-            
-            try
-            {
-                // The parameter of at(i) should be i = 1 because that's the position where we put LoRa in the variant.
-                auto x = std::get<Service::LEDs>(System::mSystemServicesRegistered.at(3));
-                //messageForLEDsService[0]=arg[0] % 2 == 0 ? ADD_TO_BLINK_COLOR_OPCODE : RESET_BLINK_COLOR_OPCODE;
-                messageForLEDsService[0]=FIRE_BLINK_COLOR_OPCODE;
-                messageForLEDsService[1]=arg[0];
-                Logger::Log("[Service::%s]::%s():\t%x. Pass to LEDs.", mName.c_str(), __func__, arg[0]);
-                x.Send(messageForLEDsService);
-            }
-            catch (std::bad_variant_access const& ex)
-            {
-                Logger::Log("Bad Variant Access -> %s.", ex.what());
-            }            
-            try
-            {
-                // The parameter of at(i) should be i = 1 because that's the position where we put LoRa in the variant.
-                auto x = std::get<Service::BLE>(System::mSystemServicesRegistered.at(0));
-                Logger::Log("[Service::%s]::%s():\t%x. Pass to BLE.", mName.c_str(), __func__, arg[0]);
-                x.Send(arg);
-            }
-            catch (std::bad_variant_access const& ex)
-            {
-                Logger::Log("Bad Variant Access -> %s.", ex.what());
-            }
+            }      
             
             break;
         }
@@ -202,4 +176,5 @@ namespace Service
         std::make_pair(1, HardwareTimers::TimerEvt()),
         std::make_pair(1, HardwareTimers::TimerEvt())
     };  // Fixed size array
+    uint16_t            HardwareTimers::mEventScheduledCount = 0;
 }

@@ -52,7 +52,8 @@ namespace Service
     private:
         static volatile uint16_t    mInterruptCounter;
         static hw_timer_t           *mTimer;
-        static std::array<std::pair<uint64_t, TimerEvt>, 10> mEventScheduler;  // Fixed size array
+        static std::array<std::pair<uint64_t, TimerEvt>, 10>    mEventScheduler;
+        static uint16_t                                         mEventScheduledCount;
 
         
     };
