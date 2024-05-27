@@ -1,6 +1,15 @@
 #include "Message.hpp"
 #include "Logger.hpp"
 
+void Message::print(char * serviceName) const {
+    for (const auto& [key, value] : mEventData) {
+        //if (value.type() == typeid(std::string)) {
+        //    Logger::Log("[Service::%s].\t \n\t\t Data Received = %s.", serviceName, std::any_cast<std::string>(value).c_str());
+        //}
+        // Add additional type checks as needed
+    }
+}
+
 size_t Message::serialize(uint8_t* buffer, size_t bufferSize) const {
     size_t offset = 0;
 

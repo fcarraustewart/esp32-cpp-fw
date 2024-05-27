@@ -36,6 +36,7 @@ public:
         }
         throw std::out_of_range("Key not found");
     }
+    void print(char * serviceName) const;
     size_t serialize(uint8_t* buffer, size_t bufferSize) const;
     bool deserialize(const uint8_t* buffer, size_t bufferSize);
 };
