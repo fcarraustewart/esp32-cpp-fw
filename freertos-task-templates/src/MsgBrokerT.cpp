@@ -3,9 +3,14 @@
 #include "Message.hpp"
 #include "Subscriber.hpp"
 
-void MsgBrokerT::registerSubscriber(const std::string& topic, Subscriber* subscriber) {
+int MsgBrokerT::registerSubscriber(const std::string& topic, MsgBrokerT::Callback callback) {
     if (subscriberCount < subscribers.size()) {
+        Subscriber* subscriber = new Subscriber(topic, callback);
         subscribers[subscriberCount++] = {topic, subscriber};
+        return subscriberCount-1;
+    } else
+    {
+        return -1;
     }
 }
 
@@ -15,5 +20,12 @@ void MsgBrokerT::publish(const Message& message) {
         if (subscribers[i].topic == topic) {
             subscribers[i].subscriber->receive(message);
         }
+    }
+}
+
+void MsgBrokerT::unsubscribeFrom(const std::string& topic, const size_t id) {
+    if (id < subscribers.size()) {
+        delete subscribers[id].subscriber;
+        subscribers[id].topic = "";
     }
 }

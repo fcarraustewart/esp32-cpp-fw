@@ -7,10 +7,8 @@
 
 class Subscriber {
 public:
-    Subscriber(const std::string& topic, MsgBrokerT* broker, MsgBrokerT::Callback callback)
-        : topic(topic), callback(callback) {
-        broker->registerSubscriber(topic, this);
-    }
+    Subscriber(const std::string& topic, MsgBrokerT::Callback callback)
+        : topic(topic), callback(callback) {}
 
     void receive(const Message& message) {
         callback(message);

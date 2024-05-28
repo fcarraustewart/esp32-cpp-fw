@@ -10,9 +10,9 @@ class Subscriber;
 class MsgBrokerT {
 public:
     using Callback = std::function<void(const Message&)>;
-
-    void registerSubscriber(const std::string& topic, Subscriber* subscriber);
+    int registerSubscriber(const std::string& topic, MsgBrokerT::Callback callback);
     void publish(const Message& message);
+    void unsubscribeFrom(const std::string& topic, const size_t id);
 
 private:
     struct SubscriberEntry {

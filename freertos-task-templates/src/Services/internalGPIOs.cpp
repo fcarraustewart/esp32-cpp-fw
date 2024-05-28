@@ -155,7 +155,7 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
             delete topic_timer_100us;
 
             Logger::Log("[Service::%s]::%s().\t Subscribe to mTopic 100us timers.", mName.c_str(), __func__);
-            System::mMsgBroker.mIPC.subscribeTo("Timer100us", [&ButtonID](const Message& message) {
+            int SubscriptionID = System::mMsgBroker.mIPC.subscribeTo("Timer100us", [ButtonID, &SubscriptionID](const Message& message) {
                 Logger::Log("[Service::%s]: Subscriber received message.", mName.c_str());   
                 try {
                     // thought: Message var is not actually needed from inside this lambda. Since you can capture all the info needed.
@@ -163,6 +163,8 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
                     Service::internalGPIOs::Send(msgReboundTimerDone);
 
                     // Unsubscribe from following messages. / >?
+                    if(SubscriptionID != -1)
+                        System::mMsgBroker.mIPC.unsubscribeFrom("Timer100us", SubscriptionID);
                 } catch (const std::bad_any_cast&) {
                     Logger::Log("[Service::%s].\t Bad any cast inside lambda function subscribeTo().", mName.c_str());    
                 }
