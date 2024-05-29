@@ -47,7 +47,7 @@ void Service::LEDs::Handle(const uint8_t arg[]){
         {
             Fire2012WithPalette();
             FastLED.show();
-            Logger::Log("[Service::%s]::%s():\t%x. Fire", mName.c_str(), __func__, arg[0]);
+            //Logger::Log("[Service::%s]::%s():\t%x. Fire", mName.c_str(), __func__, arg[0]);
 
             break;
         }
