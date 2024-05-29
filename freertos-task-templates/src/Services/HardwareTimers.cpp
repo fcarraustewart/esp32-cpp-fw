@@ -3,8 +3,6 @@
 #include <array>
 
 #define TIMER_DIVIDER 64
-static uint8_t messageForLEDsService[2]={ADD_TO_BLINK_COLOR_OPCODE, 0x00};
-
 static Service::HardwareTimers::TimerEvt  timer_requested      = Service::HardwareTimers::TimerEvt();
 static Message                            topic_timer_100us    = Message("", "");
 static uint64_t                           counter_requested    = 0;
@@ -13,7 +11,7 @@ void Service::HardwareTimers::Initialize()
 {
     mTimer = timerBegin(0, TIMER_DIVIDER, true);
     timerAttachInterrupt(mTimer, &Service::HardwareTimers::OnTimer, true);
-    timerAlarmWrite(mTimer, 1000, true);
+    timerAlarmWrite(mTimer, 10000, true);
     timerAlarmEnable(mTimer);
 // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
 // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();
@@ -113,9 +111,10 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]){
                 // The parameter of at(i) should be i = 1 because that's the position where we put LoRa in the variant.
                 auto x = std::get<Service::LEDs>(System::mSystemServicesRegistered.at(3));
                 //messageForLEDsService[0]=arg[0] % 2 == 0 ? ADD_TO_BLINK_COLOR_OPCODE : RESET_BLINK_COLOR_OPCODE;
+                uint8_t messageForLEDsService[Service::LEDs::mInputQueueItemSize]={ADD_TO_BLINK_COLOR_OPCODE, 0x00};
                 messageForLEDsService[0]=FIRE_BLINK_COLOR_OPCODE;
                 messageForLEDsService[1]=arg[0];
-                x.Send(messageForLEDsService);
+                //x.Send(messageForLEDsService);
             }
             catch (std::bad_variant_access const& ex)
             {

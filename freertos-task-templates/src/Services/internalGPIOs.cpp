@@ -96,20 +96,12 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
                     // In order to turn it back on: hook isr handler for specific gpio pin again
                     gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
                     // Can we empty fifo queue mQueue?
-                    UBaseType_t queueSize = uxQueueMessagesWaiting(mInputQueue);
-                    if(queueSize != 0)
-                        xQueueReset(mInputQueue);
-
                 }   break;
                 case GPIO_INPUT_IO_1:
                 {
                     // In order to turn it back on: hook isr handler for specific gpio pin again
                     gpio_isr_handler_add(GPIO_INPUT_IO_1, gpio_isr_handler, (void*) GPIO_INPUT_IO_1);
                     // Can we empty fifo queue mQueue?
-                    UBaseType_t queueSize = uxQueueMessagesWaiting(mInputQueue);
-                    if(queueSize != 0)
-                        xQueueReset(mInputQueue);
-                    
                 }   break;
                 
                 default:
@@ -134,6 +126,9 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
                     UBaseType_t queueSize = uxQueueMessagesWaiting(mInputQueue);
                     if(queueSize != 0)
                         xQueueReset(mInputQueue);
+                    auto x = std::get<Service::LEDs>(System::mSystemServicesRegistered.at(3));
+                    uint8_t messageForLEDsService[Service::LEDs::mInputQueueItemSize]={ADD_TO_BLINK_COLOR_OPCODE, 0x55}; 
+                    x.Send(messageForLEDsService);
 
                 }   break;
                 case GPIO_INPUT_IO_1:
@@ -146,6 +141,9 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
                     UBaseType_t queueSize = uxQueueMessagesWaiting(mInputQueue);
                     if(queueSize != 0)
                         xQueueReset(mInputQueue);
+                    auto x = std::get<Service::LEDs>(System::mSystemServicesRegistered.at(3));
+                    uint8_t messageForLEDsService[Service::LEDs::mInputQueueItemSize]={RESET_BLINK_COLOR_OPCODE, 0x00}; 
+                    x.Send(messageForLEDsService);
                     
                 }   break;
                 
