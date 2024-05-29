@@ -1,8 +1,10 @@
 #include "System.hpp"
 
-static bool bleServiceRegistered = false;   //TODO: Use some kind of register process with a template<Args...> MsgBroker::Create()
-static bool loraServiceRegistered = false;   //TODO: Use some kind of register process with a template<Args...> MsgBroker::Create()
-static bool hwTimersServiceRegistered = false;   //TODO: Use some kind of register process with a template<Args...> MsgBroker::Create()
+static bool bleServiceRegistered            = false;   //TODO: Use some kind of register process with a template<Args...> MsgBroker::Create()
+static bool loraServiceRegistered           = false;   //TODO: Use some kind of register process with a template<Args...> MsgBroker::Create()
+static bool hwTimersServiceRegistered       = false;   //TODO: Use some kind of register process with a template<Args...> MsgBroker::Create()
+MsgBrokerT  RTOS::MsgBroker::mMsgBrokerT    = MsgBrokerT();
+IPC         RTOS::MsgBroker::mIPC           = IPC("mName", &mMsgBrokerT);
 
 void RTOS::MsgBroker::Create()
 {
@@ -64,15 +66,15 @@ void RTOS::MsgBroker::Create()
         Logger::Log("MsgBroker registers Service::HwTimers");
 };
 
-RTOS::MsgBroker& operator<<(RTOS::MsgBroker& obj, RTOS::MsgBroker::Message& msg)
+RTOS::MsgBroker& operator<<(RTOS::MsgBroker& obj, Message& msg)
 {
 
-    switch( msg.mDestination )
+    switch( msg.mDataCount )
     {
         default:
         {
             if(bleServiceRegistered)
-                Service::BLE::Send((uint8_t*)   &msg.mEvent     );
+                break;
             break;
         };
     };        
@@ -83,9 +85,9 @@ RTOS::MsgBroker& operator<<(RTOS::MsgBroker& obj, RTOS::MsgBroker::Message& msg)
 void RTOS::MsgBroker::PostEvent(const Event& event)
 {
     // TODO: Try to create a Dispatch table with REGISTERED_SERVICES at compile time.
+    Logger::Log("Event Post: %d", event);
     switch(event)
     {
-        Logger::Log("Event Post: %d", event);
         case Event::BLEConnected:
         {
             // Dispatch to every service suscribed to BLE STATE notifications

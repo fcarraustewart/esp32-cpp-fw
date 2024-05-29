@@ -4,16 +4,6 @@
 /**
  * Brief:
  * This test code shows how to configure gpio and how to use gpio interrupt.
- *
- * GPIO status:
- * GPIO18: output (ESP32C2/ESP32H2 uses GPIO8 as the second output pin)
- * GPIO19: output (ESP32C2/ESP32H2 uses GPIO9 as the second output pin)
- * GPIO4:  input, pulled up, interrupt from rising edge and falling edge
- * GPIO5:  input, pulled up, interrupt from rising edge.
- *
- * Note. These are the default GPIO pins to be used in the example. You can
- * change IO pins in menuconfig.
- *
  * Test:
  * Connect GPIO18(8) with GPIO4
  * Connect GPIO19(9) with GPIO5
@@ -32,7 +22,7 @@
  * GPIO_OUTPUT_PIN_SEL                0000000000000000000011000000000000000000
  * */
 #define GPIO_INPUT_IO_0     GPIO_NUM_34
-#define GPIO_INPUT_IO_1     GPIO_NUM_19
+#define GPIO_INPUT_IO_1     GPIO_NUM_35
 #define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1))
 #define ESP_INTR_FLAG_DEFAULT 0
 
@@ -40,11 +30,11 @@ static QueueHandle_t gpio_evt_queue = NULL;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
-    static uint8_t messageForinternalGPIOs[2]={0x00, 0x00};
+    uint8_t messageForinternalGPIOs[Service::internalGPIOs::mInputQueueItemSize];
     uint32_t gpio_num = (uint32_t) arg;
 
-    messageForinternalGPIOs[0]=0x00;
-    messageForinternalGPIOs[1]=gpio_num;
+    messageForinternalGPIOs[0]=BUTTON_EVT_CMD;
+    messageForinternalGPIOs[1]=(uint8_t)gpio_num;
     Service::internalGPIOs::Send((uint8_t *)&messageForinternalGPIOs);
 }
 
@@ -74,7 +64,8 @@ void Service::internalGPIOs::Initialize()
     //set as input mode
     io_conf.mode = GPIO_MODE_INPUT;
     //enable pull-up mode
-    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
     gpio_config(&io_conf);
 
     //change gpio interrupt type for one pin
@@ -87,10 +78,6 @@ void Service::internalGPIOs::Initialize()
     //hook isr handler for specific gpio pin
     gpio_isr_handler_add(GPIO_INPUT_IO_1, gpio_isr_handler, (void*) GPIO_INPUT_IO_1);
 
-    //remove isr handler for gpio number.
-    gpio_isr_handler_remove(GPIO_INPUT_IO_0);
-    //hook isr handler for specific gpio pin again
-    gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
 }
 
 void Service::internalGPIOs::Handle(const uint8_t arg[]){
@@ -99,6 +86,122 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
      */
     switch(arg[0])
     {
+        case REBOUND_TIMEUP_CMD:
+        {
+            uint8_t ButtonID = arg[1];
+            switch (ButtonID)
+            {
+                case GPIO_INPUT_IO_0:
+                {
+                    // In order to turn it back on: hook isr handler for specific gpio pin again
+                    gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
+                    // Can we empty fifo queue mQueue?
+                }   break;
+                case GPIO_INPUT_IO_1:
+                {
+                    // In order to turn it back on: hook isr handler for specific gpio pin again
+                    gpio_isr_handler_add(GPIO_INPUT_IO_1, gpio_isr_handler, (void*) GPIO_INPUT_IO_1);
+                    // Can we empty fifo queue mQueue?
+                }   break;
+                
+                default:
+                    break;
+            }
+
+            Logger::Log("[Service::%s]::%s().\t Got REBOUND_TIMEUP_CMD.", mName.c_str(), __func__);
+
+        }   break;
+        case BUTTON_EVT_CMD:
+        {
+            uint8_t ButtonID = arg[1];
+            switch (ButtonID)
+            {
+                case GPIO_INPUT_IO_0:
+                {
+                    Logger::Log("[Service::%s]::%s().\t Got button 0x%x. Disabling ISR for this button.", mName.c_str(), __func__, GPIO_INPUT_IO_0);
+
+                    //remove isr handler for gpio number.
+                    gpio_isr_handler_remove(GPIO_INPUT_IO_0);
+                    // Can we empty fifo queue mQueue?
+                    UBaseType_t queueSize = uxQueueMessagesWaiting(mInputQueue);
+                    if(queueSize != 0)
+                        xQueueReset(mInputQueue);
+                    auto x = std::get<Service::LEDs>(System::mSystemServicesRegistered.at(3));
+                    uint8_t messageForLEDsService[Service::LEDs::mInputQueueItemSize]={ADD_TO_BLINK_COLOR_OPCODE, 0x55}; 
+                    x.Send(messageForLEDsService);
+
+                }   break;
+                case GPIO_INPUT_IO_1:
+                {
+                    Logger::Log("[Service::%s]::%s().\t Got button %x. Disabling ISR for this button.", mName.c_str(), __func__, GPIO_INPUT_IO_1);
+
+                    //remove isr handler for gpio number.
+                    gpio_isr_handler_remove(GPIO_INPUT_IO_1);
+                    // Can we empty fifo queue mQueue?
+                    UBaseType_t queueSize = uxQueueMessagesWaiting(mInputQueue);
+                    if(queueSize != 0)
+                        xQueueReset(mInputQueue);
+                    auto x = std::get<Service::LEDs>(System::mSystemServicesRegistered.at(3));
+                    uint8_t messageForLEDsService[Service::LEDs::mInputQueueItemSize]={RESET_BLINK_COLOR_OPCODE, 0x00}; 
+                    x.Send(messageForLEDsService);
+                    
+                }   break;
+                
+                default:
+                    break;
+            }
+
+            Logger::Log("[Service::%s]::%s().\t Requesting HwTimers Rebound Timer = 100us.", mName.c_str(), __func__);
+            
+            uint8_t                             msgRequestReboundTimer[RTOS::MsgBroker::cMaxPayloadLength]; //RTOS::MsgBroker::payload_t
+            Service::HardwareTimers::TimerEvt*  timer_requested =   new Service::HardwareTimers::TimerEvt();
+            Message*                            topic_timer_100us = new Message("Timer100us", "HardwareTimers");
+
+            msgRequestReboundTimer[0]   = REQUEST_TIMER_MSG_PUBLISHED_CMD;
+            uint64_t mCountUp   = 64;
+            uint8_t mMode      = (uint8_t)Service::HardwareTimers::TimerMode::OneShot;
+            uint8_t mState     = (uint8_t)Service::HardwareTimers::TimerState::Idle;
+            uint8_t mUnit      = (uint8_t)Service::HardwareTimers::TimerUnit::us;
+            
+            int err = topic_timer_100us->addEventData("Cmd",    std::to_string(REQUEST_TIMER_MSG_PUBLISHED_CMD));
+            err = topic_timer_100us->addEventData("mCountUp",   std::to_string(mCountUp));
+            err = topic_timer_100us->addEventData("mMode",      std::to_string(mMode));
+            err = topic_timer_100us->addEventData("mState",     std::to_string(mState));
+            err = topic_timer_100us->addEventData("mUnit",      std::to_string(mUnit));
+            err = topic_timer_100us->addEventData("ButtonID",   std::to_string(arg[1]));
+            
+            size_t size = topic_timer_100us->serialize(msgRequestReboundTimer+1, sizeof(msgRequestReboundTimer)-1);
+
+            delete timer_requested;
+            delete topic_timer_100us; 
+
+            // Send Msg
+            if (size > 0) {
+                Service::HardwareTimers::Send(msgRequestReboundTimer);
+            } else {   
+                if(err==0)
+                    Logger::Log("[Service::%s].\t Good addEventData().", mName.c_str());   
+                Logger::Log("[Service::%s].\t Error SENDING Service::HardwareTimers::Send(msgRequestReboundTimer).", mName.c_str());   
+            }
+
+            int SubscriptionID = System::mMsgBroker.mIPC.subscribeTo("Timer100us", [ButtonID, &SubscriptionID](const Message& message) {
+                try {
+                    // thought: Message var is not actually needed from inside this lambda. Since you can capture all the info needed.
+                    uint8_t msgReboundTimerDone[Service::internalGPIOs::mInputQueueItemSize] = {REBOUND_TIMEUP_CMD, ButtonID};
+                    Service::internalGPIOs::Send(msgReboundTimerDone);
+
+                    // Unsubscribe from following messages. / >?
+                    if(SubscriptionID != -1)
+                        System::mMsgBroker.mIPC.unsubscribeFrom("Timer100us", SubscriptionID);
+                } catch (const std::bad_any_cast&) {
+                    Logger::Log("[Service::%s].\t Bad any cast inside lambda function subscribeTo().", mName.c_str());    
+                }
+            });
+
+            Logger::Log("[Service::%s].\t\t SubscribedTo(ID=%d).", mName.c_str(), SubscriptionID);   
+
+            
+        } break;
         default:
         {
             Logger::Log("[Service::%s]::%s():\t%x.\tNYI.", mName.c_str(), __func__, arg[0]);

@@ -49,22 +49,21 @@ namespace RTOS
                 xQueueSend(mInputQueue,         (void*) msg, portMAX_DELAY);
             }
         };
-
     private:
     protected:
-        ActiveObject(){};
+        ActiveObject() {};
 
     /**
      *                  Member Variables:
      */
     public:
         static const    std::string     mName;                      /**< The variables used to create the queue */
+        static const    uint8_t         mInputQueueItemSize;        /**< The variables used to create the queue */
     protected:
         static          uint8_t         mCountLoops;                /**< The variables used to create the queue */
         static const    uint8_t         mInputQueueItemLength;      /**< The variables used to create the queue */
 
         
-        static const    uint8_t         mInputQueueItemSize;        /**< The variables used to create the queue */
         static const    size_t          mInputQueueSizeBytes;       /**< The variables used to create the queue */
         static          uint8_t         mInputQueueAllocation[];    /**< The variables used to create the queue */
 
