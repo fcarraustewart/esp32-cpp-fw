@@ -30,7 +30,7 @@ static QueueHandle_t gpio_evt_queue = NULL;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
-    static uint8_t messageForinternalGPIOs[6]={0x00, 0x00, 0x00, 0x00, 0x00};
+    uint8_t messageForinternalGPIOs[Service::internalGPIOs::mInputQueueItemSize];
     uint32_t gpio_num = (uint32_t) arg;
 
     messageForinternalGPIOs[0]=BUTTON_EVT_CMD;
