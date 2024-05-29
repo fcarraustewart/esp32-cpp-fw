@@ -14,6 +14,9 @@ void Service::LEDs::Initialize()
     // Uncomment/edit one of the following lines for your leds arrangement.
     // ## Clockless types ##
     FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
+
+    // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
+    // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();
 }
 void Service::LEDs::Handle(const uint8_t arg[]){
     /**
@@ -26,8 +29,7 @@ void Service::LEDs::Handle(const uint8_t arg[]){
         {
             for(uint8_t i=0;i<NUM_LEDS;i++)
                 leds[i] = leds[i].addToRGB(arg[1]);
-            FastLED.show();
-            Logger::Log("[Service::%s]::%s():\t%x. Blink", mName.c_str(), __func__, arg[0]);
+            FastLED.show(); 
 
             break;
         }
@@ -35,8 +37,7 @@ void Service::LEDs::Handle(const uint8_t arg[]){
         {
             for(uint8_t i=0;i<NUM_LEDS;i++)
                 leds[i] = 0;
-            FastLED.show();
-            Logger::Log("[Service::%s]::%s():\t%x. Turn Off", mName.c_str(), __func__, arg[0]);
+            FastLED.show(); 
 
             break;
         }
@@ -44,7 +45,7 @@ void Service::LEDs::Handle(const uint8_t arg[]){
         {
             Fire2012WithPalette();
             FastLED.show();
-            Logger::Log("[Service::%s]::%s():\t%x. Fire", mName.c_str(), __func__, arg[0]);
+            //Logger::Log("[Service::%s]::%s():\t%x. Fire", mName.c_str(), __func__, arg[0]);
 
             break;
         }
