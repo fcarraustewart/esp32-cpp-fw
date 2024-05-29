@@ -3,7 +3,6 @@
 #include <array>
 #include "MsgBrokerT.hpp"
 #include "Publisher.hpp"
-#include "Subscriber.hpp"
 
 class IPC {
 public:

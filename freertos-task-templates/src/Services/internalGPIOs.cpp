@@ -170,6 +170,11 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
                 }
             });
 
+            Logger::Log("[Service::%s].\t subscribeTo() = %d.", mName.c_str(), SubscriptionID);    
+                
+
+
+
             // Send Msg
             if (size > 0) {
                 Service::HardwareTimers::Send(msgRequestReboundTimer);
