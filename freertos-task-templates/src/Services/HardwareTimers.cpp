@@ -60,11 +60,11 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]){
                 
                 if(mEventScheduledCount < 10) {
                     // Schedule the event:
-                    mEventScheduler[0].first = 0 ;
-                    mEventScheduler[0].second = timer_event_requested ;
+                    mEventScheduler[mEventScheduledCount].first = 0 ;
+                    mEventScheduler[mEventScheduledCount].second = timer_event_requested ;
 
                     Logger::Log("[Service::%s]::%s().\t Scheduling: %d: mCountUp = %d", mName.c_str(), __func__, mEventScheduledCount, (int)mEventScheduler[mEventScheduledCount].second.mCountUp);
-                    //mEventScheduledCount++;
+                    mEventScheduledCount++;
                 } else {
                     Logger::Log("[Service::%s]::%s().\t Error: mEventScheduler full 0x%x.", mName.c_str(), __func__, mEventScheduledCount);
                 }
@@ -97,6 +97,7 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]){
                         } 
                         else {
                             timer_requested.mState = TimerState::Done;
+                            mEventScheduledCount--;
                             Logger::Log("[Service::%s]::%s().\t Timer Done and published %s.", mName.c_str(), __func__, msg.mTopic.c_str());
                         }
 
