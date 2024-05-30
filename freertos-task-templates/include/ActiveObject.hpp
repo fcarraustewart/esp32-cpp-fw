@@ -46,7 +46,7 @@ namespace RTOS
             } 
             else
             {
-                xQueueSend(mInputQueue,         (void*) msg, portMAX_DELAY);
+                xQueueSend(mInputQueue,         (void*) msg, 0);
             }
         };
     private:
