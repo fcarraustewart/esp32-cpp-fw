@@ -213,7 +213,7 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
                     Service::internalGPIOs::Send(msgReboundTimerDone);
 
                     // Unsubscribe from following messages. / >?
-                    if(SubscriptionID != -1)
+                    if(SubscriptionID != -1) // Watchout with lifetime of SubscriptionID, is this reentrant friendly?
                         System::mMsgBroker.mIPC.unsubscribeFrom("Timer100us", SubscriptionID);
                 } catch (const std::bad_any_cast&) {
                     Logger::Log("[Service::%s].\t Bad any cast inside lambda function subscribeTo().", mName.c_str());    
