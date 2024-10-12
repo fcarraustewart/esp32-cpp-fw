@@ -1,19 +1,19 @@
 #include "System.hpp"
 #include <exception>
-#include <FastLED.h>
+
 #define NUM_LEDS 12
-#define DATA_PIN 13
+//#define DATA_PIN 13
 #define BRIGHTNESS  255
 #define FRAMES_PER_SECOND 60
 bool gReverseDirection = false;
-CRGBPalette16 gPal;
-static CRGB leds[NUM_LEDS];
+//CRGBPalette16 gPal;
+//static CRGB leds[NUM_LEDS];
 static uint8_t heat[NUM_LEDS];
 void Service::LEDs::Initialize()
 {
     // Uncomment/edit one of the following lines for your leds arrangement.
     // ## Clockless types ##
-    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
+    //FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
 
     // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
     // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();
@@ -27,26 +27,14 @@ void Service::LEDs::Handle(const uint8_t arg[]){
     {
         case ADD_TO_BLINK_COLOR_OPCODE:
         {
-            for(uint8_t i=0;i<NUM_LEDS;i++)
-                leds[i] = leds[i].addToRGB(arg[1]);
-            FastLED.show(); 
-
             break;
         }
         case RESET_BLINK_COLOR_OPCODE:
         {
-            for(uint8_t i=0;i<NUM_LEDS;i++)
-                leds[i] = 0;
-            FastLED.show(); 
-
             break;
         }
         case FIRE_BLINK_COLOR_OPCODE:
         {
-            Fire2012WithPalette();
-            FastLED.show();
-            //Logger::Log("[Service::%s]::%s():\t%x. Fire", mName.c_str(), __func__, arg[0]);
-
             break;
         }
         default:
@@ -147,35 +135,4 @@ namespace Service
 
 void Service::LEDs::Fire2012WithPalette()
 {
-
-    // Step 1.  Cool down every cell a little
-    for( int i = 0; i < NUM_LEDS; i++) {
-        heat[i] = qsub8( heat[i],  random8(0, ((COOLING * 10) / NUM_LEDS) + 2));
-    }
-  
-    // Step 2.  Heat from each cell drifts 'up' and diffuses a little
-    for( int k= NUM_LEDS - 1; k >= 2; k--) {
-        heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2] ) / 3;
-    }
-    
-    // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
-    if( random8() < SPARKING ) {
-        int y = random8(7);
-        heat[y] = qadd8( heat[y], random8(160,255) );
-    }
-
-    // Step 4.  Map from heat cells to LED colors
-    for( int j = 0; j < NUM_LEDS; j++) {
-        // Scale the heat value from 0-255 down to 0-240
-        // for best results with color palettes.
-        uint8_t colorindex = scale8( heat[j], 240);
-        CRGB color = ColorFromPalette( gPal, colorindex);
-        int pixelnumber;
-        if( gReverseDirection ) {
-            pixelnumber = (NUM_LEDS-1) - j;
-        } else {
-            pixelnumber = j;
-        }
-        leds[pixelnumber] = color;
-    }
 }
