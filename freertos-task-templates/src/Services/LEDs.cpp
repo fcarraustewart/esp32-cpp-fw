@@ -1,19 +1,19 @@
 #include "System.hpp"
 #include <exception>
-
-#define NUM_LEDS 12
-//#define DATA_PIN 13
+#include <FastLED.h>
+#define NUM_LEDS 1
+#define DATA_PIN 10 // CodeCell LED on pin 10 is a Neopixel addressable LED
 #define BRIGHTNESS  255
 #define FRAMES_PER_SECOND 60
 bool gReverseDirection = false;
-//CRGBPalette16 gPal;
-//static CRGB leds[NUM_LEDS];
+CRGBPalette16 gPal;
+static CRGB leds[NUM_LEDS];
 static uint8_t heat[NUM_LEDS];
 void Service::LEDs::Initialize()
 {
     // Uncomment/edit one of the following lines for your leds arrangement.
     // ## Clockless types ##
-    //FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
+    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
 
     // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
     // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();
