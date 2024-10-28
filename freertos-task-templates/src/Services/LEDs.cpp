@@ -2,7 +2,7 @@
 #include <exception>
 #include <FastLED.h>
 #define NUM_LEDS 12
-#define DATA_PIN 13
+#define DATA_PIN 13 // WROVER 13 / CodeCell 10 is a Neopixel addressable LED
 #define BRIGHTNESS  255
 #define FRAMES_PER_SECOND 60
 bool gReverseDirection = false;
