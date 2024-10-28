@@ -53,7 +53,7 @@ void Service::internalGPIOs::Initialize()
     //disable pull-down mode
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     //disable pull-up mode
-    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     //configure GPIO with the given settings
     gpio_config(&io_conf);
 
@@ -64,8 +64,8 @@ void Service::internalGPIOs::Initialize()
     //set as input mode
     io_conf.mode = GPIO_MODE_INPUT;
     //enable pull-up mode
-    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-    io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     gpio_config(&io_conf);
 
     //change gpio interrupt type for one pin
@@ -125,9 +125,31 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
                     // Can we empty fifo queue mQueue?
                     UBaseType_t queueSize = uxQueueMessagesWaiting(mInputQueue);
                     if(queueSize != 0)
-                        xQueueReset(mInputQueue);
+                    {
+                        uint8_t buffer[mInputQueueItemSize];
+                        for(size_t i; i<queueSize; i++)
+                        {
+                            xQueueReceive(mInputQueue, buffer, 0);
+                            uint32_t data1 = *(uint32_t*)buffer;
+                            uint32_t data2 = *(uint32_t*)(buffer+4);
+                            Logger::Log("[Service::%s]::%s().\t queue resetted items: data1=%04x data2=%04x.", mName.c_str(), __func__, data1, data2);
+                            
+                            if((buffer[0]==BUTTON_EVT_CMD)&&(buffer[1]==GPIO_INPUT_IO_0))
+                            {
+                            Logger::Log("[Service::%s]::%s().\t Eliminate rebound.", mName.c_str(), __func__);
+                            
+
+                            }
+                            else
+                            {
+                                Logger::Log("[Service::%s]::%s().\t WAS NOT A REBOUND, HANDLE LATER.", mName.c_str(), __func__);
+                                Service::internalGPIOs::Send(buffer);
+                            }
+                        }
+                        //TODO: careful dont delete other mssgs, only button repeats
+                    }
                     auto x = std::get<Service::LEDs>(System::mSystemServicesRegistered.at(3));
-                    uint8_t messageForLEDsService[Service::LEDs::mInputQueueItemSize]={ADD_TO_BLINK_COLOR_OPCODE, 0x55}; 
+                    uint8_t messageForLEDsService[Service::LEDs::mInputQueueItemSize]={ADD_TO_BLINK_COLOR_OPCODE, 0x11}; 
                     x.Send(messageForLEDsService);
 
                 }   break;
@@ -191,7 +213,7 @@ void Service::internalGPIOs::Handle(const uint8_t arg[]){
                     Service::internalGPIOs::Send(msgReboundTimerDone);
 
                     // Unsubscribe from following messages. / >?
-                    if(SubscriptionID != -1)
+                    if(SubscriptionID != -1) // Watchout with lifetime of SubscriptionID, is this reentrant friendly?
                         System::mMsgBroker.mIPC.unsubscribeFrom("Timer100us", SubscriptionID);
                 } catch (const std::bad_any_cast&) {
                     Logger::Log("[Service::%s].\t Bad any cast inside lambda function subscribeTo().", mName.c_str());    
