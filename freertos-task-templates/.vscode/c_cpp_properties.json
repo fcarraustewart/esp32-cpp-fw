@@ -206,7 +206,6 @@
                 "/Users/fel_c/.platformio/packages/framework-arduinoespressif32/cores/esp32",
                 "/Users/fel_c/.platformio/packages/framework-arduinoespressif32/variants/esp32c3",
                 "/Users/fel_c/Projects/esp32-c--tests/freertos-task-templates/.pio/libdeps/esp32-c3-devkitm-1/Unity/src",
-                "/Users/fel_c/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
                 "/Users/fel_c/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
                 "/Users/fel_c/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src",
                 "/Users/fel_c/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",

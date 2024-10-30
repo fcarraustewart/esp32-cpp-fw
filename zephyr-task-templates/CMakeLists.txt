@@ -6,4 +6,4 @@ project(cpp_synchronization)
 
 include_directories(include)
 
-target_sources(app PRIVATE src/main.cpp src/Services/BLE.cpp src/Services/LEDs.cpp)
+target_sources(app PRIVATE src/main.cpp src/Services/BLE.cpp src/Services/LEDs.cpp src/Services/Sensor.cpp)

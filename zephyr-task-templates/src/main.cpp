@@ -38,6 +38,7 @@ LOG_MODULE_REGISTER(main);
 
 #include "Services/LEDs.hpp"
 #include "Services/BLE.hpp"
+#include "Services/Sensor.hpp"
 
 /**
  * @class semaphore the basic pure virtual semaphore class
@@ -148,6 +149,7 @@ int main(void)
 {
 	LEDs::init();
 	Service::BLE::init();
+	Service::Sensor::init();
 
 	struct k_timer timer;
 
@@ -162,8 +164,11 @@ int main(void)
 		/* wait a while, then let coop thread have a turn */
 		k_timer_start(&timer, K_MSEC(100), K_NO_WAIT);
 		k_timer_status_sync(&timer);
-		if(Service::BLE::send() == 0)
+		if(Service::BLE::send() == 0) {
 			LEDs::show();
+			Service::Sensor::send();
+		}
+		
 		sem_coop.give();
 		
 		/* Wait for coop thread to let us have a turn */

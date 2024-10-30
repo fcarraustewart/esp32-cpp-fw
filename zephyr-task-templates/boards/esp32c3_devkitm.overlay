@@ -6,6 +6,26 @@
 
 #include <zephyr/dt-bindings/led/led.h>
 
+&i2c0 {
+    status = "okay";
+    bme280@4a {
+        compatible = "bosch,bme280";
+        reg = <0x4a>;
+    };
+
+
+	vcnl4040@60 {
+		compatible = "vishay,vcnl4040";
+		reg = <0x60>;
+		int-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>; /*Only polling works: This isnt really used*/
+		led-current = <200>;
+		led-duty-cycle = <320>;
+		proximity-it = "8";
+		proximity-trigger = "close";
+		als-it = <640>;
+	};
+
+};
 &spi2 {
 	/* Workaround to support WS2812 driver */
 	line-idle-low;
@@ -32,6 +52,13 @@
 	spim2_default: spim2_default {
 		group2 {
 			pinmux = <SPIM2_MOSI_GPIO10>;
+		};
+	};
+	
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO8>,
+				 <I2C0_SCL_GPIO9>;
 		};
 	};
 };
