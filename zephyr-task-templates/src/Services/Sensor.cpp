@@ -4,7 +4,7 @@
  */
 #include "Services/Sensor.hpp"
 
-#define LOG_LEVEL 4
+#define LOG_LEVEL 3
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(Sensor);
 
@@ -16,8 +16,8 @@ LOG_MODULE_REGISTER(Sensor);
 #include <zephyr/sys_clock.h>
 #include <stdio.h>
 
-#define MAX_TEST_TIME	5000
-#define SLEEPTIME	300
+#define MAX_TEST_TIME	30
+#define SLEEPTIME	10
 
 /**********************************/
 
@@ -30,7 +30,7 @@ static void print_proxy_data(const struct device *dev)
 		return;
 	}
 
-	LOG_INF("Proximity: %d\n", (uint16_t) pdata.val1);
+	LOG_DBG("Proximity: %d\n", (uint16_t) pdata.val1);
 }
 #if defined(CONFIG_VCNL4040_ENABLE_ALS)
 static void print_als_data(const struct device *dev)
@@ -42,7 +42,7 @@ static void print_als_data(const struct device *dev)
 		return;
 	}
 
-	LOG_INF("Light (lux): %d\n", (uint16_t) val.val1);
+	LOG_DBG("Light (lux): %d\n", (uint16_t) val.val1);
 }
 #endif
 static void test_polling_mode(const struct device *dev)
@@ -146,11 +146,14 @@ int Service::Sensor::init(void)
 
 int Service::Sensor::send(void)
 {
-	LOG_INF("Testing the polling mode.\n");
-	test_polling_mode(mVCNL);
-	LOG_INF("Polling mode test finished.\n");
+	if (sensor_sample_fetch(mVCNL) < 0) {
+		LOG_INF("sample update error.\n");
+	} else {
+		print_proxy_data(mVCNL);
+#if defined(CONFIG_VCNL4040_ENABLE_ALS)
+		print_als_data(mVCNL);
+#endif
+	}
 
-	LOG_INF("Testing the trigger mode DUMMY.\n");
-	// interrupt poll not implemented yet: test_trigger_mode(vcnl);
     return 0;
 }

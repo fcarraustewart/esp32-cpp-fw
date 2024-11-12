@@ -19,4 +19,5 @@ namespace Service {
 
 	static const struct device *const mVCNL = DEVICE_DT_GET_ONE(vishay_vcnl4040);
 }
+
 #endif //_________SERVICE_SENSOR_H____________
