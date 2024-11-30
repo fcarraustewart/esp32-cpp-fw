@@ -24,7 +24,7 @@
 
 #define RGB(_r, _g, _b) { .r = (_r), .g = (_g), .b = (_b) }
 
-#define LOG_LEVEL 4
+#define LOG_LEVEL 3
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LEDs);
 
@@ -37,13 +37,12 @@ static const struct led_rgb colors[] = {
 };
 
 static struct led_rgb pixels[STRIP_NUM_PIXELS];
-
 static const struct device *const strip = DEVICE_DT_GET(STRIP_NODE);
 
-size_t 	LEDs::mColor = 0;
-int     LEDs::mRc = 0;
+size_t 	Service::LEDs::mColor = 0;
+int     Service::LEDs::mRc = 0;
 
-void LEDs::init(void){
+void Service::LEDs::init(void){
     if (device_is_ready(strip)) {
         LOG_INF("Found LED strip device %s", strip->name);
         memset(&pixels, 0x00, sizeof(pixels));
@@ -58,8 +57,7 @@ void LEDs::init(void){
 
 }
 
-void LEDs::show(void){
-
+void Service::LEDs::show(void) {
     for (size_t cursor = 0; cursor < ARRAY_SIZE(pixels); cursor++) {
         memset(&pixels, 0x00, sizeof(pixels));
         memcpy(&pixels[cursor], &colors[mColor], sizeof(struct led_rgb));

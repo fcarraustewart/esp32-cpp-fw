@@ -13,11 +13,9 @@
         reg = <0x4a>;
     };
 
-
 	vcnl4040@60 {
 		compatible = "vishay,vcnl4040";
 		reg = <0x60>;
-		int-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>; /*Only polling works: This isnt really used*/
 		led-current = <200>;
 		led-duty-cycle = <320>;
 		proximity-it = "8";
