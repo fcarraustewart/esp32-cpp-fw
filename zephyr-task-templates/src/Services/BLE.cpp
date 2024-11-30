@@ -28,6 +28,8 @@ static const struct bt_data sd[] = {
 
 /* BLE connection */
 struct bt_conn *ble_conn;
+static struct bt_le_adv_param adv_param;
+
 /* Notification state */
 volatile bool notify_enable;
 
@@ -50,10 +52,10 @@ static void received(struct bt_conn *conn, const void *data, uint16_t len, void 
 
 	switch(message[0]) {
 		case 0x33:
-			Service::BLE::send(message);
+			Service::BLE::send(message,1);
 			break;
 		case 0xAA:
-			Service::BLE::send(message);
+			Service::BLE::send(message,1);
 			break;
 
 		default:
@@ -83,7 +85,10 @@ static void bt_ready(int err)
 	}
 	LOG_INF("Bluetooth initialized");
 	/* Start advertising */
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
+	adv_param = *BT_LE_ADV_CONN_FAST_1;
+	adv_param.options |= BT_LE_ADV_OPT_ONE_TIME;
+
+	err = bt_le_adv_start(&adv_param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		LOG_ERR("Advertising failed to start (err %d)", err);
 		return;
@@ -115,10 +120,14 @@ static void disconnected(struct bt_conn *disconn, uint8_t reason)
 	LOG_INF("Disconnected, reason %u %s. Try re-advertising.", reason, bt_hci_err_to_str(reason));
 
 	int err;
-	/* Start advertising */
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
+	/* ReStart advertising */
+	//bt_le_adv_stop();
+	adv_param = *BT_LE_ADV_CONN_FAST_1;
+	adv_param.options |= BT_LE_ADV_OPT_ONE_TIME;
+
+	err = bt_le_adv_start(&adv_param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
-		LOG_ERR("Advertising failed to start (err %d)", err);
+		LOG_ERR("Advertising failed to start (err %d) %s ", err, bt_att_err_to_str(err));
 		return;
 	}
 }
@@ -128,12 +137,11 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-int Service::BLE::send(char* arg)
+int Service::BLE::send(const void *arg, uint16_t len)
 {
 	int err;
-    const char *hello_world = "Hello World!Hello World!Hello World!Hello World!Hello World!\n";
 
-    err = bt_nus_send(NULL, arg, strlen(arg));
+    err = bt_nus_send(NULL, arg, len);
     
 	if(err == 0)
 		LOG_DBG("Data send - Result: %d\n", err);

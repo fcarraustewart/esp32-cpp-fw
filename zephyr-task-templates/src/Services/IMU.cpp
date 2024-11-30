@@ -5,13 +5,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "Services/IMU.hpp"
+#include "Services/BLE.hpp"
 
 #define LOG_LEVEL 3
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(IMU);
 
-static const struct device *gpio_0;
-static volatile uint32_t *pStepCount=NULL;
 // The IMU's interrupt output pin is connected to P0.25
 
 typedef void (*fptr)(void);
@@ -24,7 +23,6 @@ static const struct device *i2c;
 int IMU_begin()
 {
 	int nack;
-	uint8_t device_id;
 	uint8_t header[4];
 	uint8_t dummy_value[64];
 	uint8_t buf[32];
@@ -73,7 +71,7 @@ int IMU_begin()
 				if(nack) return nack;
 								// Process SHTP header:
 				previous_data_buffer_continues = header[1]&0x80;
-				length = ((uint16_t)(header[1])<<8)&0x7f00 | (header[0])&0x00ff;
+				length = (((uint16_t)(header[1])<<8)&0x7f00 )|( (header[0])&0x00ff);
 				if(length == 0) {
 					state = state_t::End; // abort
 					LOG_INF("\t\t\t\t Header_Process: Ending. Length = 0 for [cmd=0xf8] with length=0x%x\n", length);
@@ -94,7 +92,7 @@ int IMU_begin()
 							// Process SHTP cargo header again:
 				memcpy(header, buf, 4);
 				previous_data_buffer_continues = header[1]&0x80;
-				length = ((uint16_t)(header[1])<<8)&0x7f00 | (header[0])&0x00ff;
+				length = (((uint16_t)(header[1])<<8)&0x7f00 )|( (header[0])&0x00ff);
 				if(length == 0) {
 					state = state_t::End; // abort
 					LOG_INF("\t\t\t\t Buffer_Process: Ending. Length = 0 for [cmd=0xf8] with length=0x%x\n", length);
@@ -139,7 +137,7 @@ int IMU_begin()
 		nack = i2c_read(	i2c,	buf,	32,		IMU_ACCEL_ADDRESS);
 
 		memcpy(header, buf, 4);
-		length = ((uint16_t)(header[1])<<8)&0x7f00 | (header[0])&0x00ff;
+		length = ((((uint16_t)(header[1])<<8)&0x7f00) )|( ((header[0])&0x00ff));
 		
 		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
 	}
@@ -162,7 +160,7 @@ int IMU_begin()
 		nack = i2c_read(	i2c,	buf,	32,		IMU_ACCEL_ADDRESS);
 
 		memcpy(header, buf, 4);
-		length = ((uint16_t)(header[1])<<8)&0x7f00 | (header[0])&0x00ff;
+		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
 		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
 	}
@@ -185,7 +183,7 @@ int IMU_begin()
 		nack = i2c_read(	i2c,	buf,	32,		IMU_ACCEL_ADDRESS);
 
 		memcpy(header, buf, 4);
-		length = ((uint16_t)(header[1])<<8)&0x7f00 | (header[0])&0x00ff;
+		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
 		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
 	}
@@ -209,7 +207,7 @@ int IMU_begin()
 		nack = i2c_read(	i2c,	buf,	32,		IMU_ACCEL_ADDRESS);
 
 		memcpy(header, buf, 4);
-		length = ((uint16_t)(header[1])<<8)&0x7f00 | (header[0])&0x00ff;
+		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
 		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
 	}
@@ -233,21 +231,12 @@ int IMU_begin()
 		nack = i2c_read(	i2c,	buf,	32,		IMU_ACCEL_ADDRESS);
 
 		memcpy(header, buf, 4);
-		length = ((uint16_t)(header[1])<<8)&0x7f00 | (header[0])&0x00ff;
+		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
 		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	
 	return nack;
-}
-static struct gpio_callback stepcount_cb;
-static void stepcount_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
-{
-	if (pStepCount != NULL)
-	{
-		*pStepCount = *pStepCount + 1;
-		LOG_INF("step %x\n",*pStepCount);
-	}	
 }
 int IMU_countSteps(volatile uint32_t * pCount)
 {
@@ -262,12 +251,11 @@ struct IMU_SHTP_PACKET
 int IMU_readRotXYZ() // returns Temperature * 100
 {
 	int 		nack;
-	int16_t 	accel;
 	uint8_t 	header[4];
 	uint8_t 	dummy_value[32];
 	bool 		previous_data_buffer_continues = 0;
 	uint16_t 	length = 0;
-	uint16_t 	seq_num = 0;
+	char		send[17];
 
 	memset(dummy_value, 0, 32);
 	dummy_value[0]=0x15; //Set Feature HEADER CMD LENGTH
@@ -287,15 +275,24 @@ int IMU_readRotXYZ() // returns Temperature * 100
 
 		memcpy(header, dummy_value, 4);
 		previous_data_buffer_continues = header[1]&0x80;
-		length = ((uint16_t)(header[1])<<8)&0x7f00 | (header[0])&0x00ff; 
+		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff); 
 		if(header[2]==3){
 			LOG_HEXDUMP_DBG(dummy_value, length, "ROT"); 
 
-			int roll = ((int)(dummy_value[14])<<8)&0x7f00 | (int)(dummy_value[13])&0x00ff; 
-			int pitch = ((int)(dummy_value[16])<<8)&0x7f00 |(int)(dummy_value[15])&0x00ff; 
-			int yaw = ((int)(dummy_value[18])<<8)&0x7f00 | (int)(dummy_value[17])&0x00ff; 
 
-			LOG_INF("Rot : (%d, %d, %d).\n",roll,pitch,yaw);
+			// int roll = ((int)(dummy_value[14])<<8)&0x7f00 | (int)(dummy_value[13])&0x00ff; 
+			// int pitch = ((int)(dummy_value[16])<<8)&0x7f00 |(int)(dummy_value[15])&0x00ff; 
+			// int yaw = ((int)(dummy_value[18])<<8)&0x7f00 | (int)(dummy_value[17])&0x00ff; 
+
+			send[0]=dummy_value[14];
+			send[1]=dummy_value[15];
+			send[2]=dummy_value[16];
+			send[3]=dummy_value[17];
+			send[4]=dummy_value[18];
+			send[5]=dummy_value[19];
+			Service::BLE::send(send, 7);
+		
+			// LOG_DBG("Rot : (0x%08x, 0x%08x, 0x%08x).\n",roll,pitch,yaw);
 		}
 
 		
@@ -306,12 +303,10 @@ int IMU_readRotXYZ() // returns Temperature * 100
 int IMU_readGyroXYZ() // returns Temperature * 100
 {
 	int 		nack;
-	int16_t 	accel;
 	uint8_t 	header[4];
 	uint8_t 	dummy_value[32];
 	bool 		previous_data_buffer_continues = 0;
 	uint16_t 	length = 0;
-	uint16_t 	seq_num = 0;
 
 	memset(dummy_value, 0, 32);
 	dummy_value[0]=0x15; //Set Feature HEADER CMD LENGTH
@@ -331,15 +326,14 @@ int IMU_readGyroXYZ() // returns Temperature * 100
 
 		memcpy(header, dummy_value, 4);
 		previous_data_buffer_continues = header[1]&0x80;
-		length = ((uint16_t)(header[1])<<8)&0x7f00 | (header[0])&0x00ff; 
+		length = (((uint16_t)(header[1])<<8)&0x7f00 )| ((header[0])&0x00ff); 
 		if(header[2]==3){
 			LOG_HEXDUMP_DBG(dummy_value, length, "Gyro"); 
+			int roll = (((int)(dummy_value[14])<<8)&0x7f00) | ((int)(dummy_value[13])&0x00ff); 
+			int pitch = (((int)(dummy_value[16])<<8)&0x7f00) |((int)(dummy_value[15])&0x00ff); 
+			int yaw = (((int)(dummy_value[18])<<8)&0x7f00) | ((int)(dummy_value[17])&0x00ff); 
 
-			int roll = ((int)(dummy_value[14])<<8)&0x7f00 | (int)(dummy_value[13])&0x00ff; 
-			int pitch = ((int)(dummy_value[16])<<8)&0x7f00 |(int)(dummy_value[15])&0x00ff; 
-			int yaw = ((int)(dummy_value[18])<<8)&0x7f00 | (int)(dummy_value[17])&0x00ff; 
-
-			LOG_INF("Gyro : (%d, %d, %d).\n",roll,pitch,yaw);
+			LOG_DBG("Gyro : (%d, %d, %d).\n",roll,pitch,yaw);
 		}
 
 		
@@ -350,12 +344,10 @@ int IMU_readGyroXYZ() // returns Temperature * 100
 int IMU_readMagXYZ() // returns Temperature * 100
 {
 	int 		nack;
-	int16_t 	accel;
 	uint8_t 	header[4];
 	uint8_t 	dummy_value[32];
 	bool 		previous_data_buffer_continues = 0;
 	uint16_t 	length = 0;
-	uint16_t 	seq_num = 0;
 
 	memset(dummy_value, 0, 32);
 	dummy_value[0]=0x15; //Set Feature HEADER CMD LENGTH
@@ -375,15 +367,15 @@ int IMU_readMagXYZ() // returns Temperature * 100
 
 		memcpy(header, dummy_value, 4);
 		previous_data_buffer_continues = header[1]&0x80;
-		length = ((uint16_t)(header[1])<<8)&0x7f00 | (header[0])&0x00ff; 
+		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff); 
 		if(header[2]==3){
 			LOG_HEXDUMP_DBG(dummy_value, length, "Mag"); 
 
-			int roll = ((int)(dummy_value[14])<<8)&0x7f00 | (int)(dummy_value[13])&0x00ff; 
-			int pitch = ((int)(dummy_value[16])<<8)&0x7f00 |(int)(dummy_value[15])&0x00ff; 
-			int yaw = ((int)(dummy_value[18])<<8)&0x7f00 | (int)(dummy_value[17])&0x00ff; 
+			int roll = (((int)(dummy_value[14])<<8)&0x7f00) | ((int)(dummy_value[13])&0x00ff); 
+			int pitch = (((int)(dummy_value[16])<<8)&0x7f00) |((int)(dummy_value[15])&0x00ff); 
+			int yaw = (((int)(dummy_value[18])<<8)&0x7f00 )|( (int)(dummy_value[17])&0x00ff); 
 
-			LOG_INF("Mag : (%d, %d, %d).\n",roll,pitch,yaw);
+			LOG_DBG("Mag : (%d, %d, %d).\n",roll,pitch,yaw);
 		}
 
 		
@@ -395,12 +387,10 @@ int IMU_readMagXYZ() // returns Temperature * 100
 int IMU_readAccelXYZ() // returns Temperature * 100
 {
 	int 		nack;
-	int16_t 	accel;
 	uint8_t 	header[4];
 	uint8_t 	dummy_value[32];
 	bool 		previous_data_buffer_continues = 0;
 	uint16_t 	length = 0;
-	uint16_t 	seq_num = 0;
 
 	memset(dummy_value, 0, 32);
 	dummy_value[0]=0x15; //Set Feature HEADER CMD LENGTH
@@ -420,15 +410,15 @@ int IMU_readAccelXYZ() // returns Temperature * 100
 
 		memcpy(header, dummy_value, 4);
 		previous_data_buffer_continues = header[1]&0x80;
-		length = ((uint16_t)(header[1])<<8)&0x7f00 | (header[0])&0x00ff; 
+		length = (((uint16_t)(header[1])<<8)&0x7f00 )|( (header[0])&0x00ff); 
 		if(header[2]==3){
 			LOG_HEXDUMP_DBG(dummy_value, length, "Accel"); 
 
-			int roll = ((int)(dummy_value[14])<<8)&0x7f00 | (int)(dummy_value[13])&0x00ff; 
-			int pitch = ((int)(dummy_value[16])<<8)&0x7f00 |(int)(dummy_value[15])&0x00ff; 
-			int yaw = ((int)(dummy_value[18])<<8)&0x7f00 | (int)(dummy_value[17])&0x00ff; 
+			int roll = (((int)(dummy_value[14])<<8)&0x7f00 )|( (int)(dummy_value[13])&0x00ff); 
+			int pitch = (((int)(dummy_value[16])<<8)&0x7f00 )|((int)(dummy_value[15])&0x00ff); 
+			int yaw = (((int)(dummy_value[18])<<8)&0x7f00 )| ((int)(dummy_value[17])&0x00ff); 
 
-			LOG_INF("Accel : (%d, %d, %d).\n",roll,pitch,yaw);
+			LOG_DBG("Accel : (%d, %d, %d).\n",roll,pitch,yaw);
 		}
 
 		

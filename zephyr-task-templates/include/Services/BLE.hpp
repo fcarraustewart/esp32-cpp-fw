@@ -10,7 +10,7 @@ namespace Service {
     class BLE {
         public:
         static int init(void);
-        static int send(char* arg);
+        static int send(const void *arg, uint16_t len);
     };
 }
 
