@@ -26,19 +26,20 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/printk.h>
 
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/led_strip.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/util.h>
 
-#define LOG_LEVEL 4
+#define LOG_LEVEL 3
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
 #include "Services/LEDs.hpp"
 #include "Services/BLE.hpp"
 #include "Services/Sensor.hpp"
+#include "Services/IMU.hpp"
+#include "Services/LoRa.hpp"
 
 /**
  * @class semaphore the basic pure virtual semaphore class
@@ -50,12 +51,13 @@ public:
 	virtual void give(void) = 0;
 };
 
-/* specify delay between greetings (in ms); compute equivalent in ticks */
-#define SLEEPTIME  500
-#define STACKSIZE 1024
 
 struct k_thread coop_thread;
-K_THREAD_STACK_DEFINE(coop_stack, STACKSIZE);
+K_THREAD_STACK_DEFINE(coop_stack, 1024);
+struct k_thread sensor_thread;
+K_THREAD_STACK_DEFINE(sensor_stack, 1024);
+struct k_thread consumer_thread;
+K_THREAD_STACK_DEFINE(consumer_stack, 1024);
 
 /*
  * @class cpp_semaphore
@@ -127,6 +129,47 @@ void cpp_semaphore::give(void)
 cpp_semaphore sem_main;
 cpp_semaphore sem_coop;
 
+struct data_item_type {
+    uint32_t field1;
+    uint32_t field2;
+    uint32_t field3;
+};
+
+char my_msgq_buffer[10 * sizeof(struct data_item_type)];
+K_MSGQ_DEFINE(my_msgq, sizeof(struct data_item_type), 10, 1);
+
+void consumer_thread_entry(void)
+{
+    struct data_item_type data;
+
+    while (1) {
+		int err;
+		err = IMU_begin();
+		if (err < 0)
+		{
+			LOG_INF("Error initializing IMU.  Error code = %d\n",err);  
+			while(1)
+			{
+				k_msleep(100);
+				k_msgq_get(&my_msgq, &data, K_FOREVER);
+			}
+		}
+		while (1) {
+			/* get a data item */
+			k_msgq_get(&my_msgq, &data, K_FOREVER);
+			k_msleep(60); // 60ms is set on the Begin at the Set Feature CMD
+			IMU_readRotXYZ();
+			//IMU_readAccelXYZ();
+			//IMU_readGyroXYZ();
+			//IMU_readMagXYZ();
+			//LOG_INF("Accel : %d, %d, %d\n",x_accel,y_accel,z_accel);
+		}
+	    /* process data item */
+        LOG_INF("Received from my_msgq.");
+    }
+}
+
+
 void coop_thread_entry(void)
 {
 	struct k_timer timer;
@@ -136,38 +179,72 @@ void coop_thread_entry(void)
 	while (1) {
 		/* wait for main thread to let us have a turn */
 		sem_coop.wait();
-		if(Service::BLE::send() == 0)
-			LEDs::show();
+		//if(Service::BLE::send("coop") == 0)
+			Service::LEDs::show();
+			
+		struct data_item_type data;
+
+		/* create data item to send (e.g. measurement, timestamp, ...) */
+		data = {1,2,3};
+
+		/* send data to consumers */
+		while (k_msgq_put(&my_msgq, &data, K_NO_WAIT) != 0) {
+			/* message queue is full: purge old data & try again */
+			k_msgq_purge(&my_msgq);
+		};
+
 		/* wait a while, then let main thread have a turn */
-		k_timer_start(&timer, K_MSEC(1), K_TIMEOUT_ABS_MS(10));
+		k_timer_start(&timer, K_MSEC(1000), K_TIMEOUT_ABS_MS(1000));
 		k_timer_status_sync(&timer);
 		sem_main.give();
 	}
 }
 
+void sensor_thread_entry(void)
+{
+	struct k_timer timer;
+
+	k_timer_init(&timer, NULL, NULL);
+
+	while (1) {
+		Service::Sensor::send();
+		/* wait a while */
+		k_timer_start(&timer, K_MSEC(1000), K_TIMEOUT_ABS_MS(1000));
+		k_timer_status_sync(&timer);
+		
+	}
+}
+
 int main(void)
 {
-	LEDs::init();
+	Service::LEDs::init();
 	Service::BLE::init();
 	Service::Sensor::init();
+	Service::LoRa::Create();
 
 	struct k_timer timer;
 
-	LOG_INF("%s: device (strip) is ready!", __FUNCTION__);
-
-	k_thread_create(&coop_thread, coop_stack, STACKSIZE,
+	k_thread_create(&coop_thread, coop_stack, 1024,
 			(k_thread_entry_t) coop_thread_entry,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+
+	k_thread_create(&sensor_thread, sensor_stack, 1024,
+			(k_thread_entry_t) sensor_thread_entry,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+
+	k_thread_create(&consumer_thread, consumer_stack, 1024,
+			(k_thread_entry_t) consumer_thread_entry,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+
 	k_timer_init(&timer, NULL, NULL);
 
 	while (1) {
 		/* wait a while, then let coop thread have a turn */
 		k_timer_start(&timer, K_MSEC(100), K_NO_WAIT);
 		k_timer_status_sync(&timer);
-		if(Service::BLE::send() == 0) {
-			LEDs::show();
-			Service::Sensor::send();
-		}
+		// if(Service::BLE::send("main") == 0) {
+		// 	Service::LEDs::show();
+		// }
 		
 		sem_coop.give();
 		
