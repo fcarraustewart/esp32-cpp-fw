@@ -1,6 +1,10 @@
 #define SLEEPTIME  500
 #define STACKSIZE 4096
 
+#define LOG_LEVEL 3
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(Hal);
+
 #include "hal/RTOS.hpp"
 
 K_THREAD_STACK_DEFINE(stack, 1024);
@@ -42,9 +46,13 @@ bool RTOS::Hal::QueueReceive(void * queue, void * receivedMsg)
 #endif
 
 #if SystemUsesZephyrRTOS == 1
-    k_msgq_get((QueueHandle_t*)queue, &receivedMsg, K_FOREVER);            
-    return true;
+    if(0 == k_msgq_get((QueueHandle_t*)queue, receivedMsg, K_FOREVER)) {            
+        LOG_HEXDUMP_DBG(receivedMsg, 5, "RTOS::Hal::QueueReceive");          
+        //LOG_INF("RTOS::Hal::QueueReceive from address=%d", this);
+        return true;
+    }
 #endif
+    return false;
 }
 
 // Not REentrant: FIXME SHOULD BE ONE FOR EACH CLASS
@@ -67,9 +75,10 @@ void RTOS::Hal::QueueSend(void * queue, const uint8_t msg[])
 
 
 #if SystemUsesZephyrRTOS == 1
-    while (k_msgq_put((QueueHandle_t*)queue, &msg, K_NO_WAIT) != 0) {   /**< Send data to consumers */
+    while (k_msgq_put((QueueHandle_t*)queue, msg, K_NO_WAIT) != 0) {   /**< Send data to consumers */
         k_msgq_purge((QueueHandle_t*)queue);			                    /**< Message queue is full: purge old data & try again */
-    }
+    }            
+    LOG_HEXDUMP_DBG(msg, 5, "RTOS::Hal::QueueSend");   
 #endif
 }
 

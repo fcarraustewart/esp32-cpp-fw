@@ -4,6 +4,7 @@
 #include "hal/RTOS.hpp"
 //#include "Logger.hpp"
 
+
 namespace RTOS
 {
     template <class D>
@@ -17,13 +18,11 @@ namespace RTOS
         static void Run(void * arg, void *arg2, void *arg3)
         {
             // arg not used.
-            printk("Service::%s::Initializes.", mName);
             D::Initialize();
 
             while(1)
                 Loop();
 
-            printk("Service::%s::End().", mName);
             D::End();
         };
         static void Loop()

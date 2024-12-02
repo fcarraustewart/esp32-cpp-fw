@@ -19,7 +19,8 @@ void Service::LoRa::Handle(const uint8_t arg[]) {
         default:
         {
             //Logger::Log("[Service::%s]::%s():\t%x.\tNYI.", mName.c_str(), __func__, arg[0]);    
-        	LOG_INF("%s: device (strip) is ready!", __FUNCTION__);
+        	LOG_INF("%s: Received something! arg[0]=%d", __FUNCTION__, arg[0]);
+            LOG_HEXDUMP_DBG(arg, 5, "\t\t\t LoRa msg Buffer values.");
             break;
         }
     };
@@ -58,6 +59,6 @@ namespace Service
     RTOS::TaskHandle_t          _LoRa::mHandle = k_thread();
     template <>
     uint8_t                     _LoRa::mReceivedMsg[
-                                        RTOS::ActiveObject<Service::LoRa>::mInputQueueItemSize
+                                        RTOS::ActiveObject<Service::LoRa>::mInputQueueItemLength
                                     ] = { 0 };
 }

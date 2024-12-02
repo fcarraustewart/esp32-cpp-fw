@@ -169,6 +169,7 @@ void consumer_thread_entry(void)
     }
 }
 
+static uint8_t msgforlora[] = {0x04,0x03,0x02,0x01,0x06};
 
 void coop_thread_entry(void)
 {
@@ -180,7 +181,8 @@ void coop_thread_entry(void)
 		/* wait for main thread to let us have a turn */
 		sem_coop.wait();
 		//if(Service::BLE::send("coop") == 0)
-			Service::LEDs::show();
+		Service::LEDs::show();
+		Service::LoRa::Send(msgforlora);
 			
 		struct data_item_type data;
 
