@@ -225,7 +225,6 @@ int main(void)
 	Service::BLE::init();
 	System::Create();
 
-
 	k_thread_create(&coop_thread, coop_stack, CONFIG_IDLE_STACK_SIZE,
 			(k_thread_entry_t) coop_thread_entry,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);

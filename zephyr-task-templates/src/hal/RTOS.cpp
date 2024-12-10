@@ -7,7 +7,9 @@ LOG_MODULE_REGISTER(Hal);
 
 #include "hal/RTOS.hpp"
 
-K_THREAD_STACK_DEFINE(stack, STACKSIZE);
+K_THREAD_STACK_DEFINE(stack1, STACKSIZE);
+
+K_THREAD_STACK_DEFINE(stack2, STACKSIZE);
 
 void RTOS::Hal::TaskCreate(TaskFunction_t thread, const uint8_t name[], TaskHandle_t* handle)
 {
@@ -18,7 +20,14 @@ void RTOS::Hal::TaskCreate(TaskFunction_t thread, const uint8_t name[], TaskHand
 #endif
 
 #if SystemUsesZephyrRTOS == 1
-    k_thread_create(handle, stack, STACKSIZE,
+    LOG_INF("Initializing: %s", name);
+    if(0 == strcmp((char*)name,"LoRa")) 
+        k_thread_create(handle, stack1, STACKSIZE,
+            (k_thread_entry_t) thread,
+            NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+
+    if(0 == strcmp((char*)name,"HardwareTimers"))
+        k_thread_create(handle, stack2, STACKSIZE,
             (k_thread_entry_t) thread,
             NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
