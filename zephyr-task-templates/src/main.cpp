@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(main);
 #include "Services/BLE.hpp"
 #include "Services/Sensor.hpp"
 #include "Services/IMU.hpp"
-#include "Services/LoRa.hpp"
+#include "System.hpp"
 
 /**
  * @class semaphore the basic pure virtual semaphore class
@@ -53,9 +53,9 @@ public:
 
 
 struct k_thread coop_thread;
-K_THREAD_STACK_DEFINE(coop_stack, 1024);
+K_THREAD_STACK_DEFINE(coop_stack, CONFIG_IDLE_STACK_SIZE);
 struct k_thread sensor_thread;
-K_THREAD_STACK_DEFINE(sensor_stack, 1024);
+K_THREAD_STACK_DEFINE(sensor_stack, CONFIG_IDLE_STACK_SIZE);
 struct k_thread consumer_thread;
 K_THREAD_STACK_DEFINE(consumer_stack, 1024);
 
@@ -157,7 +157,7 @@ void consumer_thread_entry(void)
 		while (1) {
 			/* get a data item */
 			k_msgq_get(&my_msgq, &data, K_FOREVER);
-			k_msleep(60); // 60ms is set on the Begin at the Set Feature CMD
+			//k_msleep(60); // 60ms is set on the Begin at the Set Feature CMD
 			IMU_readRotXYZ();
 			//IMU_readAccelXYZ();
 			//IMU_readGyroXYZ();
@@ -196,7 +196,7 @@ void coop_thread_entry(void)
 		};
 
 		/* wait a while, then let main thread have a turn */
-		k_timer_start(&timer, K_MSEC(1000), K_TIMEOUT_ABS_MS(1000));
+		k_timer_start(&timer, K_MSEC(60), K_TIMEOUT_ABS_MS(1000));
 		k_timer_status_sync(&timer);
 		sem_main.give();
 	}
@@ -219,18 +219,18 @@ void sensor_thread_entry(void)
 
 int main(void)
 {
-	Service::LEDs::init();
-	Service::BLE::init();
-	Service::Sensor::init();
-	Service::LoRa::Create();
-
 	struct k_timer timer;
+	Service::LEDs::init();
+	Service::Sensor::init();
+	Service::BLE::init();
+	System::Create();
 
-	k_thread_create(&coop_thread, coop_stack, 1024,
+
+	k_thread_create(&coop_thread, coop_stack, CONFIG_IDLE_STACK_SIZE,
 			(k_thread_entry_t) coop_thread_entry,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-	k_thread_create(&sensor_thread, sensor_stack, 1024,
+	k_thread_create(&sensor_thread, sensor_stack, CONFIG_IDLE_STACK_SIZE,
 			(k_thread_entry_t) sensor_thread_entry,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
@@ -240,13 +240,11 @@ int main(void)
 
 	k_timer_init(&timer, NULL, NULL);
 
+
 	while (1) {
 		/* wait a while, then let coop thread have a turn */
-		k_timer_start(&timer, K_MSEC(100), K_NO_WAIT);
+		k_timer_start(&timer, K_MSEC(1), K_NO_WAIT);
 		k_timer_status_sync(&timer);
-		// if(Service::BLE::send("main") == 0) {
-		// 	Service::LEDs::show();
-		// }
 		
 		sem_coop.give();
 		

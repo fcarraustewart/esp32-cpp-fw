@@ -156,9 +156,7 @@ int Service::BLE::send(const void *arg, uint16_t len)
 int Service::BLE::init(void)
 {
 	int err;
-
-	LOG_INF("Sample - Bluetooth Peripheral NUS\n");
-
+	
 	err = bt_nus_cb_register(&nus_listener, NULL);
 	if (err) {
 		LOG_INF("Failed to register NUS callback: %d\n", err);

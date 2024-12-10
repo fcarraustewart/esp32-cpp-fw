@@ -1,5 +1,5 @@
 #define SLEEPTIME  500
-#define STACKSIZE 4096
+#define STACKSIZE 512
 
 #define LOG_LEVEL 3
 #include <zephyr/logging/log.h>
@@ -7,7 +7,7 @@ LOG_MODULE_REGISTER(Hal);
 
 #include "hal/RTOS.hpp"
 
-K_THREAD_STACK_DEFINE(stack, 1024);
+K_THREAD_STACK_DEFINE(stack, STACKSIZE);
 
 void RTOS::Hal::TaskCreate(TaskFunction_t thread, const uint8_t name[], TaskHandle_t* handle)
 {

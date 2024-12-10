@@ -292,7 +292,7 @@ int IMU_readRotXYZ() // returns Temperature * 100
 			send[5]=dummy_value[19];
 			Service::BLE::send(send, 7);
 		
-			// LOG_DBG("Rot : (0x%08x, 0x%08x, 0x%08x).\n",roll,pitch,yaw);
+			//LOG_INF("Rot : (0x%08x, 0x%08x, 0x%08x).\n",roll,pitch,yaw);
 		}
 
 		
