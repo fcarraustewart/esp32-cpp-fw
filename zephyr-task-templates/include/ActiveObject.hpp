@@ -11,11 +11,11 @@ namespace RTOS
     class ActiveObject
     {
     public:
-        static void Create()
+        static constexpr void Create()
         {
-            RTOS::Hal::TaskCreate(&Run, mName, &mHandle);
+            RTOS::Hal::TaskCreate(Run, mName, &mHandle);
         };
-        static void Run(void * arg, void *arg2, void *arg3)
+        static constexpr void Run(void) noexcept
         {
             // arg not used.
             D::Initialize();
@@ -25,7 +25,7 @@ namespace RTOS
 
             D::End();
         };
-        static void Loop()
+        static constexpr void Loop()
         {
             if(true == RTOS::Hal::QueueReceive(&mInputQueue, (void*)mReceivedMsg))
                 D::Handle(mReceivedMsg);

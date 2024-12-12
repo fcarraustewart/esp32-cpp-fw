@@ -5,6 +5,11 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(cpp_synchronization)
 
 include_directories(include)
+#
+# ZPP is a header only library, so the only thing we do here is
+# making sure the user can do #include <zpp/thread.hpp>
+#
+zephyr_include_directories(include include/Utils)
 
 set(CMAKE_CXX_STANDARD 17)
 

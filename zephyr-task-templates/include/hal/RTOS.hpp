@@ -94,6 +94,7 @@ namespace RTOS
     typedef k_msgq QueueHandle_t   ;
     typedef k_thread TaskHandle_t    ;
     typedef k_thread_entry_t TaskFunction_t  ;
+    using func_t = void (*)() noexcept;
     // template <class Impl>
     // class Hal
     // {
@@ -104,10 +105,11 @@ namespace RTOS
     // };
     struct Hal
     {
-        static void TaskCreate(TaskFunction_t thread, const uint8_t name[], TaskHandle_t* handle);
+        static void TaskCreate(func_t thread, const uint8_t name[], TaskHandle_t* handle);
         static RTOS::QueueHandle_t QueueCreate (uint8_t const bytesLength, uint8_t const bytesSize, char * queueAllocation);
         static bool QueueReceive(void * queue, void * receivedMsg);
         static void QueueSend(void * queue, const uint8_t msg[]);
+        static uint8_t mThreadCount; 
     };
 }
 #endif

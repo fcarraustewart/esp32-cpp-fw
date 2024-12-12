@@ -52,12 +52,23 @@ public:
 };
 
 
+static uint8_t msgforlora[] = {0x04,0x03,0x02,0x01,0x06};
+
 struct k_thread coop_thread;
 K_THREAD_STACK_DEFINE(coop_stack, CONFIG_IDLE_STACK_SIZE);
 struct k_thread sensor_thread;
 K_THREAD_STACK_DEFINE(sensor_stack, CONFIG_IDLE_STACK_SIZE);
 struct k_thread consumer_thread;
 K_THREAD_STACK_DEFINE(consumer_stack, 1024);
+
+struct data_item_type {
+    uint32_t field1;
+    uint32_t field2;
+    uint32_t field3;
+};
+
+char my_msgq_buffer[10 * sizeof(struct data_item_type)];
+K_MSGQ_DEFINE(my_msgq, sizeof(struct data_item_type), 10, 1);
 
 /*
  * @class cpp_semaphore
@@ -129,15 +140,6 @@ void cpp_semaphore::give(void)
 cpp_semaphore sem_main;
 cpp_semaphore sem_coop;
 
-struct data_item_type {
-    uint32_t field1;
-    uint32_t field2;
-    uint32_t field3;
-};
-
-char my_msgq_buffer[10 * sizeof(struct data_item_type)];
-K_MSGQ_DEFINE(my_msgq, sizeof(struct data_item_type), 10, 1);
-
 void consumer_thread_entry(void)
 {
     struct data_item_type data;
@@ -155,21 +157,12 @@ void consumer_thread_entry(void)
 			}
 		}
 		while (1) {
-			/* get a data item */
 			k_msgq_get(&my_msgq, &data, K_FOREVER);
-			//k_msleep(60); // 60ms is set on the Begin at the Set Feature CMD
+			Service::HardwareTimers::Send(msgforlora);
 			IMU_readRotXYZ();
-			//IMU_readAccelXYZ();
-			//IMU_readGyroXYZ();
-			//IMU_readMagXYZ();
-			//LOG_INF("Accel : %d, %d, %d\n",x_accel,y_accel,z_accel);
 		}
-	    /* process data item */
-        LOG_INF("Received from my_msgq.");
     }
 }
-
-static uint8_t msgforlora[] = {0x04,0x03,0x02,0x01,0x06};
 
 void coop_thread_entry(void)
 {
@@ -181,7 +174,7 @@ void coop_thread_entry(void)
 		/* wait for main thread to let us have a turn */
 		sem_coop.wait();
 		//if(Service::BLE::send("coop") == 0)
-		Service::LEDs::show();
+		//Service::LEDs::show();
 		Service::LoRa::Send(msgforlora);
 			
 		struct data_item_type data;
@@ -210,7 +203,7 @@ void sensor_thread_entry(void)
 
 	while (1) {
 		Service::Sensor::send();
-		/* wait a while */
+
 		k_timer_start(&timer, K_MSEC(1000), K_TIMEOUT_ABS_MS(1000));
 		k_timer_status_sync(&timer);
 		
@@ -241,13 +234,11 @@ int main(void)
 
 
 	while (1) {
-		/* wait a while, then let coop thread have a turn */
 		k_timer_start(&timer, K_MSEC(1), K_NO_WAIT);
 		k_timer_status_sync(&timer);
 		
 		sem_coop.give();
 		
-		/* Wait for coop thread to let us have a turn */
 		sem_main.wait();
 	}
 

@@ -1,17 +1,28 @@
 #define SLEEPTIME  500
 #define STACKSIZE 512
+#define NUM_THREADS 3
+#define TCOUNT 10
+#define COUNT_LIMIT 12
 
 #define LOG_LEVEL 3
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(Hal);
 
 #include "hal/RTOS.hpp"
+#include <Utils/zpp.hpp>
+#include <Utils/TaggedCounter.hpp>
 
-K_THREAD_STACK_DEFINE(stack1, STACKSIZE);
 
-K_THREAD_STACK_DEFINE(stack2, STACKSIZE);
+struct ThreadCounter {};
+namespace {
+    ZPP_KERNEL_STACK_ARRAY_DEFINE(tstack, NUM_THREADS, STACKSIZE);
+    zpp::thread_data tcb[NUM_THREADS];
+    zpp::thread t[NUM_THREADS];
+} // anonimouse namespace
+// ZPP_KERNEL_STACK_DEFINE(tstack1, STACKSIZE);
+// ZPP_KERNEL_STACK_DEFINE(tstack2, STACKSIZE);
 
-void RTOS::Hal::TaskCreate(TaskFunction_t thread, const uint8_t name[], TaskHandle_t* handle)
+void RTOS::Hal::TaskCreate(func_t thread, const uint8_t name[], TaskHandle_t* handle)
 {
 #if SystemUsesFreeRTOS == 1
     xTaskCreate(&thread, name, 4096, 
@@ -20,16 +31,29 @@ void RTOS::Hal::TaskCreate(TaskFunction_t thread, const uint8_t name[], TaskHand
 #endif
 
 #if SystemUsesZephyrRTOS == 1
+    //ARG_UNUSED(handle);
     LOG_INF("Initializing: %s", name);
+    
+    //
+    // Create thread attributes used for thread creation
+    //
+    const zpp::thread_attr my_thread_attr(
+            zpp::thread_prio::preempt(0),
+            zpp::thread_inherit_perms::no,
+            zpp::thread_suspend::no
+        );
+    constexpr int d0 = Meta::TaggedCounter<ThreadCounter>::Value();
+    constexpr int d1 = Meta::TaggedCounter<ThreadCounter>::Value();
+
+
+
     if(0 == strcmp((char*)name,"LoRa")) 
-        k_thread_create(handle, stack1, STACKSIZE,
-            (k_thread_entry_t) thread,
-            NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+        t[0] = zpp::thread(tcb[d0], tstack(d0), my_thread_attr, thread);
 
     if(0 == strcmp((char*)name,"HardwareTimers"))
-        k_thread_create(handle, stack2, STACKSIZE,
-            (k_thread_entry_t) thread,
-            NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+        t[1] = zpp::thread(tcb[d1], tstack(d1), my_thread_attr, thread);
+
+    mThreadCount = mThreadCount + 1;
 #endif
 }
 
@@ -91,3 +115,4 @@ void RTOS::Hal::QueueSend(void * queue, const uint8_t msg[])
 #endif
 }
 
+uint8_t RTOS::Hal::mThreadCount = 0;
