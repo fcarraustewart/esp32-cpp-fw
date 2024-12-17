@@ -18,8 +18,7 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]) {
     {
         default:
         {
-            //Logger::Log("[Service::%s]::%s():\t%x.\tNYI.", mName.c_str(), __func__, arg[0]);    
-        	LOG_INF("%s: Received something! arg[0]=%d", __FUNCTION__, arg[0]);
+            LOG_DBG("[Service::%s]::%s():\t%x.\tNYI.", mName, __func__, arg[0]);   
             LOG_HEXDUMP_DBG(arg, 5, "\t\t\t HardwareTimers msg Buffer values.");
             break;
         }
@@ -56,9 +55,22 @@ namespace Service
                                         RTOS::ActiveObject<Service::HardwareTimers>::mInputQueueAllocation
                                     );
     template <>
-    RTOS::TaskHandle_t          _HardwareTimers::mHandle = k_thread();
-    template <>
     uint8_t                     _HardwareTimers::mReceivedMsg[
                                         RTOS::ActiveObject<Service::HardwareTimers>::mInputQueueItemLength
                                     ] = { 0 };
+
+
+    ZPP_KERNEL_STACK_DEFINE(hwtimersstack, 512);
+    template <>
+    zpp::thread_data            _HardwareTimers::mTaskControlBlock = zpp::thread_data();
+    template <>
+    zpp::thread                 _HardwareTimers::mHandle = zpp::thread(
+                                        mTaskControlBlock, 
+                                        Service::hwtimersstack(), 
+                                        RTOS::cThreadAttributes, 
+                                        Service::_HardwareTimers::Run
+                                    );
+
+
+                                    
 }

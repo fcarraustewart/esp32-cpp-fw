@@ -20,8 +20,8 @@ namespace internal {
 
 inline void print_arg() noexcept { }
 inline void print_arg(bool v) noexcept { printk("%d", (int)v); }
-inline void print_arg(float v) noexcept { printk("%f", v); }
-inline void print_arg(double v) noexcept { printk("%g", v); }
+inline void print_arg(float v) noexcept { printk("Error Float print not allowed."); }
+inline void print_arg(double v) noexcept { printk("Error Double print not allowed."); }
 inline void print_arg(char v) noexcept { printk("%c", v); }
 inline void print_arg(const char* v) noexcept { printk("%s", v); }
 inline void print_arg(const void* v) noexcept { printk("%p", v); }

@@ -13,7 +13,7 @@ namespace RTOS
     public:
         static constexpr void Create()
         {
-            RTOS::Hal::TaskCreate(Run, mName, &mHandle);
+            RTOS::Hal::TaskCreate(&Run, mName, &mHandle);
         };
         static constexpr void Run(void) noexcept
         {
@@ -60,8 +60,12 @@ namespace RTOS
         /** 
          * The handle used to hold the task for this ActiveObject. 
          * */
-        static          RTOS::TaskHandle_t    mHandle;
-        static          uint8_t         mReceivedMsg[];
+        static          RTOS::TaskHandle_t  mHandle;
+        static          uint8_t             mReceivedMsg[];
+        
+        static          zpp::thread_stack   mTaskStack;
+        static          zpp::thread_data    mTaskControlBlock;
+
     };
 
 }

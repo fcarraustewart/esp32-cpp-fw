@@ -30,7 +30,7 @@ int IMU_begin()
 	i2c = DEVICE_DT_GET(DT_NODELABEL(i2c0));
 	if (i2c==NULL)
 	{
-		LOG_INF("Error acquiring i2c0 interface\n");
+		LOG_DBG("Error acquiring i2c0 interface\n");
 		return -1;
 	}
 	
@@ -74,11 +74,11 @@ int IMU_begin()
 				length = (((uint16_t)(header[1])<<8)&0x7f00 )|( (header[0])&0x00ff);
 				if(length == 0) {
 					state = state_t::End; // abort
-					LOG_INF("\t\t\t\t Header_Process: Ending. Length = 0 for [cmd=0xf8] with length=0x%x\n", length);
+					LOG_DBG("\t\t\t\t Header_Process: Ending. Length = 0 for [cmd=0xf8] with length=0x%x\n", length);
 				}
 
 				seq_num = 0;
-				LOG_INF("\t\t\t\t Header_Process: new header[cmd=0xf8] with length=0x%x\n", length);
+				LOG_DBG("\t\t\t\t Header_Process: new header[cmd=0xf8] with length=0x%x\n", length);
 
 				state = state_t::Buffer_Process;
 			} 	break;
@@ -95,13 +95,13 @@ int IMU_begin()
 				length = (((uint16_t)(header[1])<<8)&0x7f00 )|( (header[0])&0x00ff);
 				if(length == 0) {
 					state = state_t::End; // abort
-					LOG_INF("\t\t\t\t Buffer_Process: Ending. Length = 0 for [cmd=0xf8] with length=0x%x\n", length);
+					LOG_DBG("\t\t\t\t Buffer_Process: Ending. Length = 0 for [cmd=0xf8] with length=0x%x\n", length);
 					return -1;
 				}
 
 				LOG_HEXDUMP_INF(buf, 32, "\t\t\t\t Buffer_Process: Read buf[length]"); 
 				seq_num += 32;
-				LOG_INF("\t\t\t\t Buffer_Process: Length [cmd=0xf8]=0x%x \t seq_num = 0x%x\n", length, seq_num);
+				LOG_DBG("\t\t\t\t Buffer_Process: Length [cmd=0xf8]=0x%x \t seq_num = 0x%x\n", length, seq_num);
 
 				if(previous_data_buffer_continues == true)
 					state = state_t::Header_Process;
@@ -139,7 +139,7 @@ int IMU_begin()
 		memcpy(header, buf, 4);
 		length = ((((uint16_t)(header[1])<<8)&0x7f00) )|( ((header[0])&0x00ff));
 		
-		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
+		LOG_DBG("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	memset(dummy_value, 0, 64);
 	dummy_value[0]=0x15; //Set Feature 
@@ -162,7 +162,7 @@ int IMU_begin()
 		memcpy(header, buf, 4);
 		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
-		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
+		LOG_DBG("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	memset(dummy_value, 0, 64);
 	dummy_value[0]=0x15; //Set Feature 
@@ -185,7 +185,7 @@ int IMU_begin()
 		memcpy(header, buf, 4);
 		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
-		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
+		LOG_DBG("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	memset(dummy_value, 0, 64);
 	dummy_value[0]=0x15; //Set Feature 
@@ -209,7 +209,7 @@ int IMU_begin()
 		memcpy(header, buf, 4);
 		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
-		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
+		LOG_DBG("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	memset(dummy_value, 0, 64);
 	dummy_value[0]=0x15; //Set Feature HEADER CMD LENGTH
@@ -224,7 +224,7 @@ int IMU_begin()
 	dummy_value[9]=0x60; //PERIOD 50ms 
 	dummy_value[10]=0xEA;
 	nack = i2c_write(i2c,	dummy_value,	0x15,	IMU_ACCEL_ADDRESS); 
-	LOG_INF("\t\t\t\t End Begin IMU, read what the BNO085 had to say.\n");
+	LOG_DBG("\t\t\t\t End Begin IMU, read what the BNO085 had to say.\n");
 
 	length = 1;
 	while(length > 0){
@@ -233,7 +233,7 @@ int IMU_begin()
 		memcpy(header, buf, 4);
 		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
-		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
+		LOG_DBG("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	
 	return nack;
@@ -292,7 +292,7 @@ int IMU_readRotXYZ() // returns Temperature * 100
 			send[5]=dummy_value[19];
 			Service::BLE::send(send, 7);
 		
-			//LOG_INF("Rot : (0x%08x, 0x%08x, 0x%08x).\n",roll,pitch,yaw);
+			//LOG_DBG("Rot : (0x%08x, 0x%08x, 0x%08x).\n",roll,pitch,yaw);
 		}
 
 		
