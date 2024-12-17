@@ -48,7 +48,7 @@ static void print_als_data(const struct device *dev)
 
 //const struct device *const Service::Sensor::mVCNL = DEVICE_DT_GET_ONE(vishay_vcnl4040);
 
-int Service::Sensor::init(void)
+int Service::Sensor::InitializeDriver(void)
 {
 	if (!device_is_ready(mVCNL)) {
 		printk("sensor: device not ready.\n");
@@ -70,4 +70,77 @@ int Service::Sensor::send(void)
 	}
 
     return 0;
+}
+
+void Service::Sensor::Initialize() {
+    // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
+    // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();
+	if(!InitializeDriver())        	
+    	LOG_INF("%s: Sensor Module Initialized correctly.", __FUNCTION__);
+}
+
+void Service::Sensor::Handle(const uint8_t arg[]) {
+    /**
+     * Handle arg packet.
+     */
+    switch(arg[0])
+    {
+        default:
+        {
+			Service::Sensor::send();
+            LOG_DBG("[Service::%s]::%s():\t%x.\tNYI.", mName, __func__, arg[0]);   
+            LOG_HEXDUMP_DBG(arg, 5, "\t\t\t Sensor msg Buffer values.");
+            break;
+        }
+    };
+}
+
+/**
+ * Build the static members on the RTOS::ActiveObject
+ */
+namespace Service
+{
+    using                       _Sensor = RTOS::ActiveObject<Service::Sensor>;
+
+    template <>
+    const uint8_t               _Sensor::mName[] =  "Sensor";
+    template <>
+    uint8_t                     _Sensor::mCountLoops = 0;
+    template <>
+    const uint8_t               _Sensor::mInputQueueItemLength = 16;
+    template <>
+    const uint8_t               _Sensor::mInputQueueItemSize = sizeof(uint16_t);
+    template <>
+    const size_t                _Sensor::mInputQueueSizeBytes = 
+                                        RTOS::ActiveObject<Service::Sensor>::mInputQueueItemLength 
+                                        * RTOS::ActiveObject<Service::Sensor>::mInputQueueItemSize;
+    template <>
+    char                        _Sensor::mInputQueueAllocation[
+                                        RTOS::ActiveObject<Service::Sensor>::mInputQueueSizeBytes
+                                    ] = { 0 };
+    template <>
+    RTOS::QueueHandle_t         _Sensor::mInputQueue = RTOS::Hal::QueueCreate(
+                                        RTOS::ActiveObject<Service::Sensor>::mInputQueueItemLength,
+                                        RTOS::ActiveObject<Service::Sensor>::mInputQueueItemSize,
+                                        RTOS::ActiveObject<Service::Sensor>::mInputQueueAllocation
+                                    );
+    template <>
+    uint8_t                     _Sensor::mReceivedMsg[
+                                        RTOS::ActiveObject<Service::Sensor>::mInputQueueItemLength
+                                    ] = { 0 };
+
+
+    ZPP_KERNEL_STACK_DEFINE(cSensorThreadStack, 512);
+    template <>
+    zpp::thread_data            _Sensor::mTaskControlBlock = zpp::thread_data();
+    template <>
+    zpp::thread                 _Sensor::mHandle = zpp::thread(
+                                        mTaskControlBlock, 
+                                        Service::cSensorThreadStack(), 
+                                        RTOS::cThreadAttributes, 
+                                        Service::_Sensor::Run
+                                    );
+
+
+                                    
 }

@@ -9,11 +9,20 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/i2c.h>
+#include <ActiveObject.hpp>
 
 namespace Service {
-    class Sensor {
-        public:
-        static int init(void);
+    class Sensor : public RTOS::ActiveObject<Sensor>
+    {
+    public:
+        static void Initialize();
+        static void Handle(const uint8_t arg[]);
+        static void End(){
+        };
+
+        Sensor() : RTOS::ActiveObject<Sensor>(){};
+    private:
+        static int InitializeDriver(void);
         static int send(void);
     };
 
