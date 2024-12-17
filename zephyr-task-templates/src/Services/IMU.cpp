@@ -11,6 +11,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(IMU);
 
+#define IMU_ACCEL_ADDRESS (0x4a)
+#define IMU_MAG_ADDRESS (0x4a  )
+
 // The IMU's interrupt output pin is connected to P0.25
 
 typedef void (*fptr)(void);
@@ -20,7 +23,7 @@ int IMU_writeMagRegister(uint8_t RegNum, uint8_t Value);
 void readCalibrationData();
 //static const struct spi_config * cfg;
 static const struct device *i2c;
-int IMU_begin()
+int Service::IMU::Begin()
 {
 	int nack;
 	uint8_t header[4];
@@ -30,7 +33,7 @@ int IMU_begin()
 	i2c = DEVICE_DT_GET(DT_NODELABEL(i2c0));
 	if (i2c==NULL)
 	{
-		LOG_INF("Error acquiring i2c0 interface\n");
+		LOG_DBG("Error acquiring i2c0 interface\n");
 		return -1;
 	}
 	
@@ -74,11 +77,11 @@ int IMU_begin()
 				length = (((uint16_t)(header[1])<<8)&0x7f00 )|( (header[0])&0x00ff);
 				if(length == 0) {
 					state = state_t::End; // abort
-					LOG_INF("\t\t\t\t Header_Process: Ending. Length = 0 for [cmd=0xf8] with length=0x%x\n", length);
+					LOG_DBG("\t\t\t\t Header_Process: Ending. Length = 0 for [cmd=0xf8] with length=0x%x\n", length);
 				}
 
 				seq_num = 0;
-				LOG_INF("\t\t\t\t Header_Process: new header[cmd=0xf8] with length=0x%x\n", length);
+				LOG_DBG("\t\t\t\t Header_Process: new header[cmd=0xf8] with length=0x%x\n", length);
 
 				state = state_t::Buffer_Process;
 			} 	break;
@@ -95,13 +98,13 @@ int IMU_begin()
 				length = (((uint16_t)(header[1])<<8)&0x7f00 )|( (header[0])&0x00ff);
 				if(length == 0) {
 					state = state_t::End; // abort
-					LOG_INF("\t\t\t\t Buffer_Process: Ending. Length = 0 for [cmd=0xf8] with length=0x%x\n", length);
+					LOG_DBG("\t\t\t\t Buffer_Process: Ending. Length = 0 for [cmd=0xf8] with length=0x%x\n", length);
 					return -1;
 				}
 
 				LOG_HEXDUMP_INF(buf, 32, "\t\t\t\t Buffer_Process: Read buf[length]"); 
 				seq_num += 32;
-				LOG_INF("\t\t\t\t Buffer_Process: Length [cmd=0xf8]=0x%x \t seq_num = 0x%x\n", length, seq_num);
+				LOG_DBG("\t\t\t\t Buffer_Process: Length [cmd=0xf8]=0x%x \t seq_num = 0x%x\n", length, seq_num);
 
 				if(previous_data_buffer_continues == true)
 					state = state_t::Header_Process;
@@ -139,7 +142,7 @@ int IMU_begin()
 		memcpy(header, buf, 4);
 		length = ((((uint16_t)(header[1])<<8)&0x7f00) )|( ((header[0])&0x00ff));
 		
-		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
+		LOG_DBG("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	memset(dummy_value, 0, 64);
 	dummy_value[0]=0x15; //Set Feature 
@@ -162,7 +165,7 @@ int IMU_begin()
 		memcpy(header, buf, 4);
 		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
-		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
+		LOG_DBG("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	memset(dummy_value, 0, 64);
 	dummy_value[0]=0x15; //Set Feature 
@@ -185,7 +188,7 @@ int IMU_begin()
 		memcpy(header, buf, 4);
 		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
-		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
+		LOG_DBG("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	memset(dummy_value, 0, 64);
 	dummy_value[0]=0x15; //Set Feature 
@@ -209,7 +212,7 @@ int IMU_begin()
 		memcpy(header, buf, 4);
 		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
-		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
+		LOG_DBG("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	memset(dummy_value, 0, 64);
 	dummy_value[0]=0x15; //Set Feature HEADER CMD LENGTH
@@ -224,7 +227,7 @@ int IMU_begin()
 	dummy_value[9]=0x60; //PERIOD 50ms 
 	dummy_value[10]=0xEA;
 	nack = i2c_write(i2c,	dummy_value,	0x15,	IMU_ACCEL_ADDRESS); 
-	LOG_INF("\t\t\t\t End Begin IMU, read what the BNO085 had to say.\n");
+	LOG_DBG("\t\t\t\t End Begin IMU, read what the BNO085 had to say.\n");
 
 	length = 1;
 	while(length > 0){
@@ -233,12 +236,12 @@ int IMU_begin()
 		memcpy(header, buf, 4);
 		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff);
 		
-		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
+		LOG_DBG("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	
 	return nack;
 }
-int IMU_countSteps(volatile uint32_t * pCount)
+int Service::IMU::CountSteps(volatile uint32_t * pCount)
 {
     return 0;
 }
@@ -248,14 +251,14 @@ struct IMU_SHTP_PACKET
 	uint8_t data[64];
 };
 
-int IMU_readRotXYZ() // returns Temperature * 100
+int Service::IMU::ReadRotXYZ() // returns Temperature * 100
 {
 	int 		nack;
 	uint8_t 	header[4];
 	uint8_t 	dummy_value[32];
 	bool 		previous_data_buffer_continues = 0;
 	uint16_t 	length = 0;
-	char		send[17];
+	uint8_t		send[17];
 
 	memset(dummy_value, 0, 32);
 	dummy_value[0]=0x15; //Set Feature HEADER CMD LENGTH
@@ -290,9 +293,9 @@ int IMU_readRotXYZ() // returns Temperature * 100
 			send[3]=dummy_value[17];
 			send[4]=dummy_value[18];
 			send[5]=dummy_value[19];
-			Service::BLE::send(send, 7);
+			Service::BLE::Send(send);
 		
-			// LOG_DBG("Rot : (0x%08x, 0x%08x, 0x%08x).\n",roll,pitch,yaw);
+			//LOG_DBG("Rot : (0x%08x, 0x%08x, 0x%08x).\n",roll,pitch,yaw);
 		}
 
 		
@@ -300,7 +303,7 @@ int IMU_readRotXYZ() // returns Temperature * 100
 	while(length != 0);
     return length;    
 }
-int IMU_readGyroXYZ() // returns Temperature * 100
+int Service::IMU::ReadGyroXYZ() // returns Temperature * 100
 {
 	int 		nack;
 	uint8_t 	header[4];
@@ -341,7 +344,7 @@ int IMU_readGyroXYZ() // returns Temperature * 100
 	while(length != 0);
     return length;       
 }
-int IMU_readMagXYZ() // returns Temperature * 100
+int Service::IMU::ReadMagXYZ() // returns Temperature * 100
 {
 	int 		nack;
 	uint8_t 	header[4];
@@ -384,7 +387,7 @@ int IMU_readMagXYZ() // returns Temperature * 100
     return length;         
 }
 
-int IMU_readAccelXYZ() // returns Temperature * 100
+int Service::IMU::ReadAccelXYZ() // returns Temperature * 100
 {
 	int 		nack;
 	uint8_t 	header[4];
@@ -431,7 +434,7 @@ int IMU_readAccelXYZ() // returns Temperature * 100
 
 
 
-// int IMU_readMagZ() // returns Temperature * 100
+// int Service::IMU::readMagZ() // returns Temperature * 100
 // {
 // 	int16_t mag;
 // 	uint8_t buf[2];
@@ -444,28 +447,112 @@ int IMU_readAccelXYZ() // returns Temperature * 100
 // }
 
 
-int IMU_readRegister(uint8_t RegNum, uint8_t *Value)
-{
-	    //reads a byte from a specific register
-    int nack;   
-	nack=i2c_reg_read_byte(i2c,IMU_ACCEL_ADDRESS,RegNum,Value);
-	return nack;
+// int Service::IMU::ReadRegister(uint8_t RegNum, uint8_t *Value)
+// {
+// 	    //reads a byte from a specific register
+//     int nack;   
+// 	nack=i2c_reg_read_byte(i2c,IMU_ACCEL_ADDRESS,RegNum,Value);
+// 	return nack;
+// }
+// int Service::IMU::WriteRegister(uint8_t RegNum, uint8_t Value)
+// {
+// 	//writes a byte to a specific register
+//     uint8_t Buffer[2];    
+//     Buffer[0]= Value;    
+//     int nack;    
+// 	nack=i2c_reg_write_byte(i2c,IMU_ACCEL_ADDRESS,RegNum,Value);
+//     return nack;
+// }
+// int Service::IMU::WriteMagRegister(uint8_t RegNum, uint8_t Value)
+// {
+// 	//writes a byte to a specific register
+//     uint8_t Buffer[2];    
+//     Buffer[0]= Value;    
+//     int nack;    
+// 	nack=i2c_reg_write_byte(i2c,IMU_MAG_ADDRESS,RegNum,Value);
+//     return nack;
+// }
+void Service::IMU::InitializeDriver() {
+	int err;
+	err = Service::IMU::Begin();
+	if (err < 0)
+	{
+		LOG_INF("Error initializing IMU.  Error code = %d\n",err);  
+		while(1)
+		{
+			k_msleep(100);
+		}
+	}
 }
-int IMU_writeRegister(uint8_t RegNum, uint8_t Value)
-{
-	//writes a byte to a specific register
-    uint8_t Buffer[2];    
-    Buffer[0]= Value;    
-    int nack;    
-	nack=i2c_reg_write_byte(i2c,IMU_ACCEL_ADDRESS,RegNum,Value);
-    return nack;
+void Service::IMU::Initialize() {
+    // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
+    // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();  
+	InitializeDriver();      	
+    LOG_INF("%s: IMU Module Initialized correctly.", __FUNCTION__);
 }
-int IMU_writeMagRegister(uint8_t RegNum, uint8_t Value)
+
+void Service::IMU::Handle(const uint8_t arg[]) {
+    /**
+     * Handle arg packet.
+     */
+    switch(arg[0])
+    {
+        default:
+        {
+			Service::IMU::ReadRotXYZ();
+            LOG_DBG("[Service::%s]::%s():\t%x.\tNYI.", mName, __func__, arg[0]);   
+            LOG_HEXDUMP_DBG(arg, 5, "\t\t\t IMU msg Buffer values.");
+            break;
+        }
+    };
+}
+
+/**
+ * Build the static members on the RTOS::ActiveObject
+ */
+namespace Service
 {
-	//writes a byte to a specific register
-    uint8_t Buffer[2];    
-    Buffer[0]= Value;    
-    int nack;    
-	nack=i2c_reg_write_byte(i2c,IMU_MAG_ADDRESS,RegNum,Value);
-    return nack;
+    using                       _IMU = RTOS::ActiveObject<Service::IMU>;
+
+    template <>
+    const uint8_t               _IMU::mName[] =  "IMU";
+    template <>
+    uint8_t                     _IMU::mCountLoops = 0;
+    template <>
+    const uint8_t               _IMU::mInputQueueItemLength = 16;
+    template <>
+    const uint8_t               _IMU::mInputQueueItemSize = sizeof(uint16_t);
+    template <>
+    const size_t                _IMU::mInputQueueSizeBytes = 
+                                        RTOS::ActiveObject<Service::IMU>::mInputQueueItemLength 
+                                        * RTOS::ActiveObject<Service::IMU>::mInputQueueItemSize;
+    template <>
+    char                        _IMU::mInputQueueAllocation[
+                                        RTOS::ActiveObject<Service::IMU>::mInputQueueSizeBytes
+                                    ] = { 0 };
+    template <>
+    RTOS::QueueHandle_t         _IMU::mInputQueue = RTOS::Hal::QueueCreate(
+                                        RTOS::ActiveObject<Service::IMU>::mInputQueueItemLength,
+                                        RTOS::ActiveObject<Service::IMU>::mInputQueueItemSize,
+                                        RTOS::ActiveObject<Service::IMU>::mInputQueueAllocation
+                                    );
+    template <>
+    uint8_t                     _IMU::mReceivedMsg[
+                                        RTOS::ActiveObject<Service::IMU>::mInputQueueItemLength
+                                    ] = { 0 };
+
+
+    ZPP_KERNEL_STACK_DEFINE(cIMUThreadStack, 1024);
+    template <>
+    zpp::thread_data            _IMU::mTaskControlBlock = zpp::thread_data();
+    template <>
+    zpp::thread                 _IMU::mHandle = zpp::thread(
+                                        mTaskControlBlock, 
+                                        Service::cIMUThreadStack(), 
+                                        RTOS::cThreadAttributes, 
+                                        Service::_IMU::Run
+                                    );
+
+
+                                    
 }

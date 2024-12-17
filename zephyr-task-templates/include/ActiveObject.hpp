@@ -4,29 +4,28 @@
 #include "hal/RTOS.hpp"
 //#include "Logger.hpp"
 
+
 namespace RTOS
 {
     template <class D>
     class ActiveObject
     {
     public:
-        static void Create()
+        static constexpr void Create()
         {
             RTOS::Hal::TaskCreate(&Run, mName, &mHandle);
         };
-        static void Run(void * arg, void *arg2, void *arg3)
+        static constexpr void Run(void) noexcept
         {
             // arg not used.
-            printk("Service::%s::Initializes.", mName);
             D::Initialize();
 
             while(1)
                 Loop();
 
-            printk("Service::%s::End().", mName);
             D::End();
         };
-        static void Loop()
+        static constexpr void Loop()
         {
             if(true == RTOS::Hal::QueueReceive(&mInputQueue, (void*)mReceivedMsg))
                 D::Handle(mReceivedMsg);
@@ -61,8 +60,12 @@ namespace RTOS
         /** 
          * The handle used to hold the task for this ActiveObject. 
          * */
-        static          RTOS::TaskHandle_t    mHandle;
-        static          uint8_t         mReceivedMsg[];
+        static          RTOS::TaskHandle_t  mHandle;
+        static          uint8_t             mReceivedMsg[];
+        
+        static          zpp::thread_stack   mTaskStack;
+        static          zpp::thread_data    mTaskControlBlock;
+
     };
 
 }

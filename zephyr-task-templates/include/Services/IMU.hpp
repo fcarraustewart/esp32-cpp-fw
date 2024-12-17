@@ -1,13 +1,32 @@
 #ifndef __IMU_h
 #define __IMU_h
-#include <stdint.h>
-#define IMU_ACCEL_ADDRESS (0x4a)
-#define IMU_MAG_ADDRESS (0x4a  )
 
-int IMU_begin();
-int IMU_readRotXYZ();
-int IMU_readGyroXYZ();
-int IMU_readMagXYZ();
-int IMU_readAccelXYZ();
-int IMU_countSteps(volatile uint32_t * pCount);
+#include "ActiveObject.hpp"
+/**
+ * Customize the static methods of an RTOS::ActiveObject
+ */
+namespace Service
+{
+    class IMU : public RTOS::ActiveObject<IMU>
+    {
+    public:
+        static void Initialize();
+        static void Handle(const uint8_t arg[]);
+        static void End(){
+        };
+
+        IMU() : RTOS::ActiveObject<IMU>(){};
+    private:
+        static void InitializeDriver();
+        static int  Begin();
+        static int  ReadRotXYZ();
+        static int  ReadGyroXYZ();
+        static int  ReadMagXYZ();
+        static int  ReadAccelXYZ();
+        static int  CountSteps(volatile uint32_t * pCount);
+
+    };
+
+};
+
 #endif
