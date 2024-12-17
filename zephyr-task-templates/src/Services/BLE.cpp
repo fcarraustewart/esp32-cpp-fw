@@ -10,6 +10,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/nus.h>
+#include <zephyr/sys/util.h>
 
 #define LOG_LEVEL 3
 #include <zephyr/logging/log.h>
@@ -81,9 +82,25 @@ static void conn_params_updated(struct bt_conn *conn, uint16_t interval, uint16_
 	LOG_INF("Conn params updated: interval %d unit, latency %d, timeout: %d0 ms",interval, latency, timeout);
 }
 
+int Service::BLE::send(const void *arg, uint16_t len)
+{
+	int err;
+
+    err = bt_nus_send(NULL, arg, len);
+    
+	if(err == 0)
+		LOG_DBG("Data send - Result: %d\n", err);
+
+    if (err < 0 && (err != -EAGAIN) && (err != -ENOTCONN)) {
+        return err;
+    }
+
+    return 0;
+}
+
 static void received(struct bt_conn *conn, const void *data, uint16_t len, void *ctx)
 {
-	char message[CONFIG_BT_L2CAP_TX_MTU + 1] = "";
+	uint8_t message[CONFIG_BT_L2CAP_TX_MTU + 1] = "";
 
 	ARG_UNUSED(conn);
 	ARG_UNUSED(ctx);
@@ -93,10 +110,10 @@ static void received(struct bt_conn *conn, const void *data, uint16_t len, void 
 
 	switch(message[0]) {
 		case 0x33:
-			Service::BLE::send(message,1);
+			Service::BLE::Send(message);
 			break;
 		case 0xAA:
-			Service::BLE::send(message,1);
+			Service::BLE::Send(message);
 			break;
 
 		default:
@@ -253,23 +270,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.le_param_updated= conn_params_updated
 };
 
-int Service::BLE::send(const void *arg, uint16_t len)
-{
-	int err;
-
-    err = bt_nus_send(NULL, arg, len);
-    
-	if(err == 0)
-		LOG_DBG("Data send - Result: %d\n", err);
-
-    if (err < 0 && (err != -EAGAIN) && (err != -ENOTCONN)) {
-        return err;
-    }
-
-    return 0;
-}
-
-int Service::BLE::init(void)
+int Service::BLE::InitializeDriver(void)
 {
 	int err;
 	
@@ -281,7 +282,79 @@ int Service::BLE::init(void)
 
 	err = bt_enable(bt_ready);
 
-	LOG_INF("Initialization complete\n");
-
 	return 0;
+}
+
+void Service::BLE::Initialize() {
+    // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
+    // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>(); 
+    LOG_INF("[Service::%s]::%s().", mName, __FUNCTION__);
+	if(!InitializeDriver()) 	
+    	LOG_INF("\t\t\t%s: BLE Module Initialized correctly.", __FUNCTION__);
+}
+
+void Service::BLE::Handle(const uint8_t arg[]) {
+    /**
+     * Handle arg packet.
+     */
+    switch(arg[0])
+    {
+        default:
+        {
+			Service::BLE::send(arg,18);
+            LOG_DBG("[Service::%s]::%s():\t%x.\tNYI.", mName, __func__, arg[0]);   
+            LOG_HEXDUMP_DBG(arg, 5, "\t\t\t BLE msg Buffer values.");
+            break;
+        }
+    };
+}
+
+/**
+ * Build the static members on the RTOS::ActiveObject
+ */
+namespace Service
+{
+    using                       _BLE = RTOS::ActiveObject<Service::BLE>;
+
+    template <>
+    const uint8_t               _BLE::mName[] =  "BLEss";
+    template <>
+    uint8_t                     _BLE::mCountLoops = 0;
+    template <>
+    const uint8_t               _BLE::mInputQueueItemLength = 16;
+    template <>
+    const uint8_t               _BLE::mInputQueueItemSize = sizeof(uint16_t);
+    template <>
+    const size_t                _BLE::mInputQueueSizeBytes = 
+                                        RTOS::ActiveObject<Service::BLE>::mInputQueueItemLength 
+                                        * RTOS::ActiveObject<Service::BLE>::mInputQueueItemSize;
+    template <>
+    char                        _BLE::mInputQueueAllocation[
+                                        RTOS::ActiveObject<Service::BLE>::mInputQueueSizeBytes
+                                    ] = { 0 };
+    template <>
+    RTOS::QueueHandle_t         _BLE::mInputQueue = RTOS::Hal::QueueCreate(
+                                        RTOS::ActiveObject<Service::BLE>::mInputQueueItemLength,
+                                        RTOS::ActiveObject<Service::BLE>::mInputQueueItemSize,
+                                        RTOS::ActiveObject<Service::BLE>::mInputQueueAllocation
+                                    );
+    template <>
+    uint8_t                     _BLE::mReceivedMsg[
+                                        RTOS::ActiveObject<Service::BLE>::mInputQueueItemLength
+                                    ] = { 0 };
+
+
+    ZPP_KERNEL_STACK_DEFINE(cBLEThreadStack, 2048);
+    template <>
+    zpp::thread_data            _BLE::mTaskControlBlock = zpp::thread_data();
+    template <>
+    zpp::thread                 _BLE::mHandle = zpp::thread(
+                                        mTaskControlBlock, 
+                                        Service::cBLEThreadStack(), 
+                                        RTOS::cThreadAttributes, 
+                                        Service::_BLE::Run
+                                    );
+
+
+                                    
 }

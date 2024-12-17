@@ -5,13 +5,23 @@
 #ifndef _________SERVICE_LEDS_H____________
 #define _________SERVICE_LEDS_H____________
 
-#include <zephyr/sys/util.h>
-namespace Service {		
-	class LEDs {
-		public:
-		static void init(void);
-		static void show(void);
+#include "ActiveObject.hpp"
 
+namespace Service {		
+	class LEDs : public RTOS::ActiveObject<LEDs>
+    {
+	private:
+		static void InitializeDriver(void);
+		static void show(void);
+    public:
+        static void Initialize();
+        static void Handle(const uint8_t arg[]);
+        static void End(){
+        };
+
+        LEDs() : RTOS::ActiveObject<LEDs>(){};
+
+	public:
 		static size_t mColor;
 		static int mRc;
 	};

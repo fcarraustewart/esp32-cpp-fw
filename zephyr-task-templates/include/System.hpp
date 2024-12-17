@@ -4,11 +4,16 @@
 #include <vector>
 #include "Services/LoRa.hpp"
 #include "Services/HardwareTimers.hpp"
+#include "Services/BLE.hpp"
+#include "Services/LEDs.hpp"
+#include "Services/Sensor.hpp"
+#include "Services/IMU.hpp"
+
 #include "Utils/overload.hpp"
 
 class System {
-#define _REGISTERED_SERVICES    Service::LoRa,  Service::HardwareTimers
-#define REGISTERED_SERVICES     Service::LoRa{}, Service::HardwareTimers{}
+#define _REGISTERED_SERVICES    Service::LoRa,  Service::HardwareTimers,    Service::BLE,   Service::LEDs,   Service::Sensor,       Service::IMU
+#define REGISTERED_SERVICES     Service::LoRa{}, Service::HardwareTimers{}, Service::BLE{}, Service::LEDs{},   Service::Sensor{},   Service::IMU{}
 public:
     static std::vector<std::variant<_REGISTERED_SERVICES>> mSystemServicesRegistered;
 public:
@@ -37,6 +42,30 @@ public:
                             each type 
                             in mSystemServicesRegistered.
                         */
+                        [](const Service::BLE &x)
+                        {
+                            x.Create();
+                            // LOG_INF("Initializing: %s", x.mName);
+                            // LOG_INF("Address a pointer at = 0x%08x", (unsigned int)&x);
+                        },
+                        [](const Service::IMU &x)
+                        {
+                            x.Create();
+                            // LOG_INF("Initializing: %s", x.mName);
+                            // LOG_INF("Address a pointer at = 0x%08x", (unsigned int)&x);
+                        },
+                        [](const Service::LEDs &x)
+                        {
+                            x.Create();
+                            // LOG_INF("Initializing: %s", x.mName);
+                            // LOG_INF("Address a pointer at = 0x%08x", (unsigned int)&x);
+                        },
+                        [](const Service::Sensor &x)
+                        {
+                            x.Create();
+                            // LOG_INF("Initializing: %s", x.mName);
+                            // LOG_INF("Address a pointer at = 0x%08x", (unsigned int)&x);
+                        },
                         [](const Service::LoRa &x)
                         {
                             x.Create();
@@ -45,10 +74,12 @@ public:
                         },
                         [](const Service::HardwareTimers &x)
                         {
+                            x.Create();
                             // LOG_INF("Initializing: %s", x.mName);
                             // LOG_INF("Address a pointer at = 0x%08x", (unsigned int)&x);
-                            x.Create();
-                        }},
+                        }
+                        
+                    },
                 v);
 
             }
