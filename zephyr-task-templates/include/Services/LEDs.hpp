@@ -6,7 +6,10 @@
 #define _________SERVICE_LEDS_H____________
 
 #include "ActiveObject.hpp"
-
+#define CMD_LEDs_SHOW 									0x04
+#define CMD_BUZZER_INITIALIZATION_COMPLETE_SONG 		0x05
+#define CMD_WORKQUEUE_SONG 								0x06
+#define CMD_BUZZER_AVAILABLE 							0x55
 namespace Service {		
 	class LEDs : public RTOS::ActiveObject<LEDs>
     {
@@ -21,9 +24,10 @@ namespace Service {
 
         LEDs() : RTOS::ActiveObject<LEDs>(){};
 
-	public:
+	private:
 		static size_t mColor;
 		static int mRc;
+		static bool mBuzzerDriverRunning;
 	};
 }
 
