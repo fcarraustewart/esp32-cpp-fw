@@ -4,9 +4,8 @@
  */
 #include "Services/Sensor.hpp"
 
-#define LOG_LEVEL 3
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(Sensor);
+LOG_MODULE_REGISTER(Sensor, LOG_LEVEL_INF);
 
 /**********************************/
 /* samples/sensor/vcnl4040 */
@@ -19,6 +18,8 @@ LOG_MODULE_REGISTER(Sensor);
 #define MAX_TEST_TIME	30
 #define SLEEPTIME	10
 
+#include <System.hpp>
+static uint8_t msgforLEDsBuzzer[] = {CMD_WORKQUEUE_SONG, 0x3};
 /**********************************/
 
 static void print_proxy_data(const struct device *dev)
@@ -31,8 +32,15 @@ static void print_proxy_data(const struct device *dev)
 	}
 
 	LOG_DBG("Proximity: %d\n", (uint16_t) pdata.val1);
+
+    if(pdata.val1 > 5000)
+    {
+        msgforLEDsBuzzer[1] = 2;
+        Service::LEDs::Send(msgforLEDsBuzzer);
+    }
 }
 #if defined(CONFIG_VCNL4040_ENABLE_ALS)
+
 static void print_als_data(const struct device *dev)
 {
 	struct sensor_value val;
@@ -43,6 +51,12 @@ static void print_als_data(const struct device *dev)
 	}
 
 	LOG_DBG("Light (lux): %d\n", (uint16_t) val.val1);
+
+    if(val.val1 == 0)
+    {
+        msgforLEDsBuzzer[1] = 3;
+        Service::LEDs::Send(msgforLEDsBuzzer);
+    }
 }
 #endif
 

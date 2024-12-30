@@ -14,6 +14,10 @@ LOG_MODULE_REGISTER(IMU);
 #define IMU_ACCEL_ADDRESS (0x4a)
 #define IMU_MAG_ADDRESS (0x4a  )
 
+#define SCALE_Q(n) (1.0f / (1 << n))
+
+const float scaleRadToDeg = 180.0 / 3.14159265358;
+
 // The IMU's interrupt output pin is connected to P0.25
 
 typedef void (*fptr)(void);
