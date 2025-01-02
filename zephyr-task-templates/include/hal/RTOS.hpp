@@ -5,9 +5,9 @@
 #define SystemUsesZephyrRTOS 1
 
 #if SystemUsesFreeRTOS == 1
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "freertos/task.h"
+#include <freertos/FreeRTOS.hpp>
+#include <freertos/queue.hpp>
+#include <freertos/task.hpp>
 #include <thread>
 #include <queue>
 #endif
