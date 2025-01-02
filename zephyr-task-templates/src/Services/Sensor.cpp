@@ -2,7 +2,7 @@
  * Copyright (c) 2024 fcarraustewart, SAS.
  *
  */
-#include "Services/Sensor.hpp"
+#include <Services/Sensor.hpp>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(Sensor, LOG_LEVEL_INF);
@@ -143,7 +143,7 @@ namespace Service
                                         RTOS::ActiveObject<Service::Sensor>::mInputQueueItemLength
                                     ] = { 0 };
 
-
+    namespace {
     ZPP_KERNEL_STACK_DEFINE(cSensorThreadStack, 512);
     template <>
     zpp::thread_data            _Sensor::mTaskControlBlock = zpp::thread_data();
@@ -154,6 +154,7 @@ namespace Service
                                         RTOS::cThreadAttributes, 
                                         Service::_Sensor::Run
                                     );
+    } //https://www.reddit.com/r/cpp/comments/4ukhh5/what_is_the_purpose_of_anonymous_namespaces/#:~:text=The%20purpose%20of%20an%20anonymous,will%20not%20have%20internal%20linkage.
 
 
                                     

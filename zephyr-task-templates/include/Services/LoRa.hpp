@@ -1,6 +1,6 @@
 #ifndef SERVICE_LORA__H_H
 #define SERVICE_LORA__H_H
-#include "ActiveObject.hpp"
+#include <ActiveObject.hpp>
 /**
  * Customize the static methods of an RTOS::ActiveObject
  */

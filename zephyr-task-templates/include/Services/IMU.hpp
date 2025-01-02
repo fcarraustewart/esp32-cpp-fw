@@ -1,7 +1,7 @@
 #ifndef __IMU_h
 #define __IMU_h
 
-#include "ActiveObject.hpp"
+#include <ActiveObject.hpp>
 /**
  * Customize the static methods of an RTOS::ActiveObject
  */

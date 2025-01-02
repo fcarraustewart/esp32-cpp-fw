@@ -35,7 +35,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#include "System.hpp"
+#include <System.hpp>
 
 static uint8_t msgforlora[] = {0x04,0x03,0x02,0x01,0x06};
 static uint8_t msgforLEDsLEDShow[] = {CMD_LEDs_SHOW,0x03,0x02,0x01,0x06};

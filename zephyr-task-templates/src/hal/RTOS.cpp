@@ -2,7 +2,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(Hal);
 
-#include "hal/RTOS.hpp"
+#include <hal/RTOS.hpp>
 
 RTOS::QueueHandle_t RTOS::Hal::QueueCreate (uint8_t const bytesLength, uint8_t const bytesSize, char * queueAllocation)
 {
