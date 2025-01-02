@@ -82,6 +82,8 @@ static zpp::thread buzzer_tid;
 struct k_work_q my_work_q;
 //k_work_poll_submit_to_queue
 #include <System.hpp>
+#include <Drivers/BleStateMachine.hpp>
+static BleStateMachine mStateMachine;
 static void work_fn(struct k_work *w)
 {
     LOG_INF("Run buzzer_thread");
@@ -100,6 +102,11 @@ static void work_fn(struct k_work *w)
     //struct work_context *ctx = CONTAINER_OF(dwork, struct work_context,timed_work);
     
     buzzer_thread();
+    
+    mStateMachine.RaiseEvent(BleStateMachine::Event::Connected);
+    mStateMachine.Run();
+    mStateMachine.RaiseEvent(BleStateMachine::Event::Disconnected);
+    mStateMachine.Run();
 
     // Driver Played Song: Let Service::LEDs know.
     uint8_t m[5] = {CMD_BUZZER_AVAILABLE, 0x22, 0x00, 0x00, 0x00};
