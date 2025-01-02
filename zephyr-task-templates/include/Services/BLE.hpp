@@ -4,7 +4,7 @@
  */
 #ifndef _________SERVICE_BLE_H____________
 #define _________SERVICE_BLE_H____________
-#include "ActiveObject.hpp"
+#include <ActiveObject.hpp>
 
 namespace Service {
     class BLE : public RTOS::ActiveObject<BLE> {

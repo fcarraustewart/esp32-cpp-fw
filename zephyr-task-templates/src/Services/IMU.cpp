@@ -4,8 +4,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "Services/IMU.hpp"
-#include "Services/BLE.hpp"
+#include <Services/IMU.hpp>
+#include <Services/BLE.hpp>
 
 #define LOG_LEVEL 3
 #include <zephyr/logging/log.h>
@@ -13,6 +13,10 @@ LOG_MODULE_REGISTER(IMU);
 
 #define IMU_ACCEL_ADDRESS (0x4a)
 #define IMU_MAG_ADDRESS (0x4a  )
+
+#define SCALE_Q(n) (1.0f / (1 << n))
+
+const float scaleRadToDeg = 180.0 / 3.14159265358;
 
 // The IMU's interrupt output pin is connected to P0.25
 
@@ -37,7 +41,7 @@ int Service::IMU::Begin()
 		return -1;
 	}
 	
-    k_msleep(1000); // allow interface MCU complete booting before dummy read
+    zpp::this_thread::sleep_for(std::chrono::milliseconds(1000)); // allow interface MCU complete booting before dummy read
 
 					// Read SHTP config reg:
 	
@@ -119,7 +123,7 @@ int Service::IMU::Begin()
 			default:
 				break;
 		}
-		k_msleep(10);
+		zpp::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 	while(state != state_t::End);
 
@@ -480,7 +484,7 @@ void Service::IMU::InitializeDriver() {
 		LOG_INF("Error initializing IMU.  Error code = %d\n",err);  
 		while(1)
 		{
-			k_msleep(100);
+			zpp::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 	}
 }
@@ -541,7 +545,7 @@ namespace Service
                                         RTOS::ActiveObject<Service::IMU>::mInputQueueItemLength
                                     ] = { 0 };
 
-
+	namespace {
     ZPP_KERNEL_STACK_DEFINE(cIMUThreadStack, 1024);
     template <>
     zpp::thread_data            _IMU::mTaskControlBlock = zpp::thread_data();
@@ -552,6 +556,8 @@ namespace Service
                                         RTOS::cThreadAttributes, 
                                         Service::_IMU::Run
                                     );
+    } //https://www.reddit.com/r/cpp/comments/4ukhh5/what_is_the_purpose_of_anonymous_namespaces/#:~:text=The%20purpose%20of%20an%20anonymous,will%20not%20have%20internal%20linkage.
+
 
 
                                     

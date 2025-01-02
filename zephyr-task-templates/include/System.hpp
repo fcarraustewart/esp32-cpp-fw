@@ -2,17 +2,17 @@
 #define __SYSTEM__H
 #include <variant>
 #include <vector>
-#include "Services/LoRa.hpp"
-#include "Services/HardwareTimers.hpp"
-#include "Services/BLE.hpp"
-#include "Services/LEDs.hpp"
-#include "Services/Sensor.hpp"
-#include "Services/IMU.hpp"
+#include <Services/LoRa.hpp>
+#include <Services/HardwareTimers.hpp>
+#include <Services/BLE.hpp>
+#include <Services/LEDs.hpp>
+#include <Services/Sensor.hpp>
+#include <Services/IMU.hpp>
 
-#include "Utils/overload.hpp"
+#include <Utils/overload.hpp>
 
 class System {
-#define _REGISTERED_SERVICES    Service::LoRa,  Service::HardwareTimers,    Service::BLE,   Service::LEDs,   Service::Sensor,       Service::IMU
+#define _REGISTERED_SERVICES    std::monostate, Service::LoRa,  Service::HardwareTimers,    Service::BLE,   Service::LEDs,   Service::Sensor,       Service::IMU
 #define REGISTERED_SERVICES     Service::LoRa{}, Service::HardwareTimers{}, Service::BLE{}, Service::LEDs{},   Service::Sensor{},   Service::IMU{}
 public:
     static std::vector<std::variant<_REGISTERED_SERVICES>> mSystemServicesRegistered;
@@ -30,7 +30,7 @@ public:
              */
             //LOG_INF("mSystemServicesRegistered Address a pointer at = 0x%08x", (unsigned int)&mSystemServicesRegistered);
             // Remember you can do mSystemServicesRegistered.push_back(); for each service here.
-
+            //using my_variant = std::variant<_REGISTERED_SERVICES>;
             for (auto &v : mSystemServicesRegistered)
             {
                 //LOG_INF("Testing Create()");
@@ -42,6 +42,11 @@ public:
                             each type 
                             in mSystemServicesRegistered.
                         */
+                        [](const std::monostate &x)
+                        {
+                            // LOG_INF("Initializing: %s", x.mName);
+                            // LOG_INF("Address a pointer at = 0x%08x", (unsigned int)&x);
+                        },
                         [](const Service::BLE &x)
                         {
                             x.Create();
@@ -81,6 +86,33 @@ public:
                         
                     },
                 v);
+
+
+
+                // std::visit([](auto &&arg) -> my_variant { 
+                //     using T = std::decay_t<decltype(arg)>;
+                //     if constexpr (std::is_same_v<std::monostate, T>) {
+                //         return; // arg is std::monostate here
+                //     }
+                //     else if constexpr (std::is_same_v<Service::LoRa, T>) {
+                //         return; // arg is A here
+                //     }
+                //     else if constexpr (std::is_same_v<Service::BLE, T>) {
+                //         return; // arg is B here
+                //     }
+                //     else if constexpr (std::is_same_v<Service::HardwareTimers, T>) {
+                //         return; // arg is B here
+                //     }
+                //     else if constexpr (std::is_same_v<Service::IMU, T>) {
+                //         return; // arg is B here
+                //     }
+                //     else if constexpr (std::is_same_v<Service::LEDs, T>) {
+                //         return; // arg is B here
+                //     }
+                //     else if constexpr (std::is_same_v<Service::Sensor, T>) {
+                //         return; // arg is B here
+                //     }
+                // }, v);
 
             }
     };

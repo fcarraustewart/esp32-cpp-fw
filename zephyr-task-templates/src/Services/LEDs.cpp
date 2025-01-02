@@ -3,7 +3,7 @@
  *
  */
 
-#include "Services/LEDs.hpp"
+#include <Services/LEDs.hpp>
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/led_strip.h>
@@ -30,11 +30,58 @@
 LOG_MODULE_REGISTER(LEDs);
 
 static const struct led_rgb colors[] = {
-	RGB(0x35, 0x14, 0x25), /* red */
-	RGB(0x25, 0x35, 0x14), /* green */
-	RGB(0x14, 0x25, 0x35), /* blue */
-	RGB(0x25, 0x30, 0x35), /* yellow */
-	RGB(0x10, 0x20, 0x35), /* white */
+	RGB(0x01, 0x00, 0x00), /* red */
+	RGB(0x03, 0x00, 0x00), /* red */
+	RGB(0x05, 0x00, 0x00), /* red */
+	RGB(0x15, 0x00, 0x00), /* red */
+	RGB(0x25, 0x00, 0x00), /* red */
+	RGB(0x35, 0x00, 0x00), /* red */
+	RGB(0x55, 0x00, 0x00), /* red */
+	RGB(0x75, 0x00, 0x00), /* red */
+	RGB(0x95, 0x00, 0x00), /* red */
+	RGB(0xA5, 0x00, 0x00), /* red */
+	RGB(0xB5, 0x00, 0x00), /* red */
+    RGB(0xC5, 0x00, 0x00), /* red */
+    RGB(0xC5, 0x00, 0x00), /* red */
+	RGB(0xB5, 0x00, 0x00), /* red */
+	RGB(0xA5, 0x00, 0x00), /* red */
+	RGB(0x95, 0x00, 0x00), /* red */
+	RGB(0x75, 0x00, 0x00), /* red */
+	RGB(0x55, 0x00, 0x00), /* red */
+	RGB(0x35, 0x00, 0x00), /* red */
+	RGB(0x25, 0x00, 0x00), /* red */
+	RGB(0x15, 0x00, 0x00), /* red */
+	RGB(0x05, 0x00, 0x00), /* red */
+	RGB(0x03, 0x00, 0x00), /* red */
+	RGB(0x01, 0x00, 0x00), /* red */
+	RGB(0x00, 0x00, 0x01), /* zeros */
+	RGB(0x00, 0x00, 0x01), /* zeros */
+	RGB(0x00, 0x00, 0x01), /* zeros */
+	RGB(0x00, 0x00, 0x01), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x01), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x01), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x01), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x01), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
+	RGB(0x00, 0x00, 0x00), /* zeros */
 };
 
 static struct led_rgb pixels[STRIP_NUM_PIXELS];
@@ -42,6 +89,7 @@ static const struct device *const strip = DEVICE_DT_GET(STRIP_NODE);
 
 size_t 	Service::LEDs::mColor = 0;
 int     Service::LEDs::mRc = 0;
+bool    Service::LEDs::mBuzzerDriverRunning = 0;
 
 void Service::LEDs::InitializeDriver(void){
     if (device_is_ready(strip)) {
@@ -72,15 +120,52 @@ void Service::LEDs::show(void) {
     mColor = (mColor + 4) % ARRAY_SIZE(colors);
 };
 
+extern "C"{
+    #include <Drivers/buzzer_output_drv.h>
+}
+namespace {
+    ZPP_KERNEL_STACK_DEFINE(cWQStack, 2048);
+    static zpp::thread buzzer_tid;
+}
+#include <System.hpp>
+#include <Drivers/BleStateMachine.hpp>
+#include <hal/WQBackgroundThread.hpp>
+
+static zpp::WQBackgroundThread mDriverWorkerThread;
+static BleStateMachine mStateMachine;
+
+static void work_fn(struct k_work *w)
+{
+    LOG_INF("Run buzzer_thread");
+
+    buzzer_thread();
+    
+    mStateMachine.RaiseEvent(BleStateMachine::Event::Connected);
+    mStateMachine.Run();
+    mStateMachine.RaiseEvent(BleStateMachine::Event::Disconnected);
+    mStateMachine.Run();
+
+    // Driver Played Song: Let Service::LEDs know.
+    uint8_t m[5] = {CMD_BUZZER_AVAILABLE, 0x22, 0x00, 0x00, 0x00};
+    Service::LEDs::Send(m);
+}
 
 void Service::LEDs::Initialize() {
     // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
     // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();    
     LOG_INF("[Service::%s]::%s().", mName, __FUNCTION__);
 	InitializeDriver();
+
+    buzzer_init(nullptr);
+
+    // Launch DriverWorkerThread
+    mDriverWorkerThread.Initialize(cWQStack().data(), cWQStack().size(), 
+                    zpp::thread_prio::coop(7).native_value());
+
     LOG_INF("\t\t\t%s: LEDs Module Initialized correctly.", __FUNCTION__);
         	
 }
+
 
 void Service::LEDs::Handle(const uint8_t arg[]) {
     /**
@@ -88,9 +173,58 @@ void Service::LEDs::Handle(const uint8_t arg[]) {
      */
     switch(arg[0])
     {
+        case CMD_BUZZER_AVAILABLE:
+        {
+            mBuzzerDriverRunning = false;
+        }; break;
+        case CMD_LEDs_SHOW:
+        {
+            show();        
+        }; break;
+        case CMD_BUZZER_INITIALIZATION_COMPLETE_SONG:
+        {
+            LOG_INF("CMD_BUZZER_INITIALIZATION_COMPLETE_SONG Received");
+            
+            // Use a workerQueue with worker_thread...
+            // Launching the thread here is difficult to manage
+            buzzer_tid.wakeup();
+            
+        }; break;
+        case CMD_WORKQUEUE_SONG:
+        {
+            if(mBuzzerDriverRunning == true)
+            {
+                // Send();
+                break;
+            }
+
+            switch(arg[1]){
+                case 0:
+                    play_beep_once();
+                    break;
+                case 1: 
+                    play_funkytown_once();
+                    break;
+                case 2: 
+                    play_golioth_once();
+                    break;
+                case 3: 
+                    play_mario_once();
+                    break;
+                case 4:
+                    play_double_beep_once();
+                    break;
+                default:
+                    break;
+            };
+            
+            auto res = mDriverWorkerThread.ScheduleWork(work_fn, zpp::to_timeout(std::chrono::milliseconds(500)));
+            LOG_INF("CMD_WORKQUEUE_SONG: Result (%s)", "res.message()" );
+
+            mBuzzerDriverRunning = true;
+        }; break;
         default:
         {
-            show();
             LOG_DBG("[Service::%s]::%s():\t%x.\tNYI.", mName, __func__, arg[0]);   
             LOG_HEXDUMP_DBG(arg, 5, "\t\t\t LEDs msg Buffer values.");
             break;
@@ -132,8 +266,8 @@ namespace Service
                                         RTOS::ActiveObject<Service::LEDs>::mInputQueueItemLength
                                     ] = { 0 };
 
-
-    ZPP_KERNEL_STACK_DEFINE(cLEDsStack, 512);
+    namespace {
+    ZPP_KERNEL_STACK_DEFINE(cLEDsStack, 768);
     template <>
     zpp::thread_data            _LEDs::mTaskControlBlock = zpp::thread_data();
     template <>
@@ -143,7 +277,6 @@ namespace Service
                                         RTOS::cThreadAttributes, 
                                         Service::_LEDs::Run
                                     );
-
-
+    } //https://www.reddit.com/r/cpp/comments/4ukhh5/what_is_the_purpose_of_anonymous_namespaces/#:~:text=The%20purpose%20of%20an%20anonymous,will%20not%20have%20internal%20linkage.
                                     
 }
