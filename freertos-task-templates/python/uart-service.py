@@ -46,7 +46,12 @@ async def uart_terminal():
         # This assumes that the device includes the UART service UUID in the
         # advertising data. This test may need to be adjusted depending on the
         # actual advertising data supplied by the device.
-        print(adv.service_uuids)
+        #print(adv.service_uuids)
+        print("\t\t Found Device: ", adv.local_name)
+        if( adv.local_name == "Zephyr" ):
+            print("\t\t\t Got and advertising ESP32C3 Zephyr device.")
+            print("\t\t\t\t uuid Data: ", adv.service_uuids)
+            return True
         if UART_SERVICE_UUID.lower() in adv.service_uuids:
             return True
 
@@ -71,9 +76,9 @@ async def uart_terminal():
         pitch = 0
         yaw = 0
         message = data
-        print("Message[0]= \t",message[0],"\tMessage[1]= \t",message[1])
-        print("Message[2]= \t",message[2],"\tMessage[3]= \t",message[3])
-        print("Message[4]= \t",message[4],"\tMessage[5]= \t",message[5])
+        print("Message[0]= \t",message[0],"\t","\tMessage[1]= \t",message[1],"\t")
+        print("Message[2]= \t",message[2],"\t","\tMessage[3]= \t",message[3])
+        print("Message[4]= \t",message[4],"\t","\tMessage[5]= \t",message[5])
         # Check if message!=bytes("main", 'utf-8') or message!=bytes("coop", 'utf-8'):
             
         if len(message)>5:
@@ -83,7 +88,7 @@ async def uart_terminal():
             roll = conversion * sign_roll * round(float(int( message[1]&0x00ff)+ int(((message[0]&0x7f )<<8))) ,ndigits=2)
             pitch = conversion * sign_pitch * round(float(int( message[3]&0x00ff)+ int(((message[2]&0x7f )<<8))) ,ndigits=2)
             yaw = conversion * sign_yaw * round(float(int( message[5]&0x00ff)+ int(((message[4]&0x7f )<<8))) ,ndigits=2)
-            print("\t " , np.array([roll,pitch,yaw]))
+            print("\t ","\t", np.array([roll,pitch,yaw]))
                 
         #print("\troll,pitch,yaw =",roll,pitch,yaw)
     async with BleakClient(device, disconnected_callback=handle_disconnect) as client:
