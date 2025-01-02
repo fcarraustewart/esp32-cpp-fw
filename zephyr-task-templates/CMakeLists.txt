@@ -1,27 +1,33 @@
-# SPDX-License-Identifier: Apache-2.0
-
 cmake_minimum_required(VERSION 3.20.0)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(cpp_synchronization)
 
-include_directories(include)
-#
-# ZPP is a header only library, so the only thing we do here is
-# making sure the user can do #include <zpp/thread.hpp>
-#
-zephyr_include_directories(include include/Utils include/Drivers)
+include(include/Utils/cmake/utils.cmake)
 
-set(CMAKE_CXX_STANDARD 17)
+# Needed for colorful output
+zephyr_compile_options(-fdiagnostics-color=always)
 
-target_sources(app PRIVATE 
-src/main.cpp 
-src/System.cpp
-#src/Drivers/ble_state_machine.c
-src/hal/RTOS.cpp
-src/Services/BLE.cpp 
-src/Services/LEDs.cpp 
-src/Services/Sensor.cpp 
-src/Services/IMU.cpp 
-src/Services/LoRa.cpp
-src/Services/HardwareTimers.cpp
-)
+# include directories
+set(INCLUDES
+    .
+    include
+    include/Utils
+    include/Drivers
+    include/hal
+    )
+include_directories(${INCLUDES})
+zephyr_include_directories(${INCLUDES})
+
+# Wildcard append all source files
+RECURSIVE_FIND_FILE(CPP_SOURCE_FILES_WILDCARD "src" "*.cpp")
+RECURSIVE_FIND_FILE(C_SOURCE_FILES_WILDCARD "src" "*.c")
+list(APPEND SOURCE_FILES ${CPP_SOURCE_FILES_WILDCARD})
+list(APPEND SOURCE_FILES ${C_SOURCE_FILES_WILDCARD})
+
+# add all sources to the project
+target_sources(app PRIVATE ${SOURCE_FILES})
+target_sources(app PRIVATE src/main.cpp)

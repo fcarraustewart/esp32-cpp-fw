@@ -2,7 +2,7 @@
  * Copyright (c) 2024 fcarraustewart, SAS.
  *
  */
-#include "Services/BLE.hpp"
+#include <Services/BLE.hpp>
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -198,11 +198,11 @@ static void connected(struct bt_conn *connected, uint8_t err)
 	LOG_INF("Connected %s", addr);
 	//Delays added to avoid collision (in case the central also send request), should be better with a state machine. 
 	update_connection_parameters();
-	k_sleep(K_MSEC(500));
+	zpp::this_thread::sleep_for(std::chrono::milliseconds(500));
 	request_mtu_exchange();
-	k_sleep(K_MSEC(500));
+	zpp::this_thread::sleep_for(std::chrono::milliseconds(500));
 	request_data_len_update();
-	k_sleep(K_MSEC(500));
+	zpp::this_thread::sleep_for(std::chrono::milliseconds(500));
 	request_phy_update();
 
 }
@@ -343,7 +343,7 @@ namespace Service
                                         RTOS::ActiveObject<Service::BLE>::mInputQueueItemLength
                                     ] = { 0 };
 
-
+	namespace {
     ZPP_KERNEL_STACK_DEFINE(cBLEThreadStack, 2048);
     template <>
     zpp::thread_data            _BLE::mTaskControlBlock = zpp::thread_data();
@@ -354,7 +354,6 @@ namespace Service
                                         RTOS::cThreadAttributes, 
                                         Service::_BLE::Run
                                     );
-
-
-                                    
+    } //https://www.reddit.com/r/cpp/comments/4ukhh5/what_is_the_purpose_of_anonymous_namespaces/#:~:text=The%20purpose%20of%20an%20anonymous,will%20not%20have%20internal%20linkage.
+                                  
 }

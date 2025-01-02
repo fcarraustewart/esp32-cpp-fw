@@ -1,4 +1,4 @@
-#include "Services/HardwareTimers.hpp"
+#include <Services/HardwareTimers.hpp>
 
 #define LOG_LEVEL 3
 #include <zephyr/logging/log.h>
@@ -59,7 +59,7 @@ namespace Service
                                         RTOS::ActiveObject<Service::HardwareTimers>::mInputQueueItemLength
                                     ] = { 0 };
 
-
+    namespace {
     ZPP_KERNEL_STACK_DEFINE(hwtimersstack, 512);
     template <>
     zpp::thread_data            _HardwareTimers::mTaskControlBlock = zpp::thread_data();
@@ -70,6 +70,8 @@ namespace Service
                                         RTOS::cThreadAttributes, 
                                         Service::_HardwareTimers::Run
                                     );
+    } //https://www.reddit.com/r/cpp/comments/4ukhh5/what_is_the_purpose_of_anonymous_namespaces/#:~:text=The%20purpose%20of%20an%20anonymous,will%20not%20have%20internal%20linkage.
+
 
 
                                     

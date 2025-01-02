@@ -35,9 +35,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#include "System.hpp"
+#include <System.hpp>
 
 static uint8_t msgforlora[] = {0x04,0x03,0x02,0x01,0x06};
+static uint8_t msgforLEDsLEDShow[] = {CMD_LEDs_SHOW,0x03,0x02,0x01,0x06};
+static uint8_t msgforLEDsBuzzer[] = {CMD_WORKQUEUE_SONG,0x00,0x02,0x01,0x06};
 
 struct k_thread coop_thread;
 K_THREAD_STACK_DEFINE(coop_stack, 256);
@@ -47,13 +49,21 @@ K_THREAD_STACK_DEFINE(sensor_stack, 256);
 void coop_thread_entry(void)
 {
 	struct k_timer timer;
+	uint16_t count = 0;
 
 	k_timer_init(&timer, NULL, NULL);
 
 	while (1) {
 		/* wait for main thread to let us have a turn */
 		Service::LoRa::Send(msgforlora);
-		Service::LEDs::Send(msgforlora);
+		Service::LEDs::Send(msgforLEDsLEDShow);
+		count++;
+
+		if(count == 1024) {
+			msgforLEDsBuzzer[1] = 0;
+			Service::LEDs::Send(msgforLEDsBuzzer);
+			count = 0;
+		}
 
 		/* wait a while, then let main thread have a turn */
 		k_timer_start(&timer, K_MSEC(60), K_TIMEOUT_ABS_MS(1000));
@@ -64,11 +74,19 @@ void coop_thread_entry(void)
 void sensor_thread_entry(void)
 {
 	struct k_timer timer;
-
+	uint8_t count;
 	k_timer_init(&timer, NULL, NULL);
 
 	while (1) {
 		Service::Sensor::Send((uint8_t*)"sensor_thread_entry");
+		count++;
+
+		if(count == 255) {
+			msgforLEDsBuzzer[1] = 4;
+			Service::LEDs::Send(msgforLEDsBuzzer);
+			count = 0;
+		}
+		
 		Service::IMU::Send(msgforlora);
 
 		k_timer_start(&timer, K_MSEC(60), K_TIMEOUT_ABS_MS(1000));
@@ -80,7 +98,11 @@ void sensor_thread_entry(void)
 int main(void)
 {
 	struct k_timer timer;
-	System::Create();
+	System::Create(); // check zephyrproject/zephyr/samples/kernel/metairq_dispatch
+
+	uint32_t start = k_cycle_get_32();
+
+	LOG_INF("System Start Timestamp %ul", start);
 
 	k_thread_create(&coop_thread, coop_stack, 256,
 			(k_thread_entry_t) coop_thread_entry,
@@ -92,10 +114,21 @@ int main(void)
 
 	k_timer_init(&timer, NULL, NULL);
 
+	// Init Done:
+	Service::LEDs::Send(msgforLEDsBuzzer);
 
 	while (1) {
 		k_timer_start(&timer, K_MSEC(1), K_NO_WAIT);
 		k_timer_status_sync(&timer);
+
+		uint32_t time_now = k_cycle_get_32();
+		if( std::chrono::milliseconds(time_now-start) 
+							> std::chrono::milliseconds(500000000))
+		{
+			start = time_now;
+
+			LOG_DBG("System time_now Timestamp %ul", time_now - start);
+		}
 	}
 
 	return 0;

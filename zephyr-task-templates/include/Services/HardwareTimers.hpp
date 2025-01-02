@@ -1,6 +1,6 @@
 #ifndef SERVICE_HARDWARETIMERS__H_H
 #define SERVICE_HARDWARETIMERS__H_H
-#include "ActiveObject.hpp"
+#include <ActiveObject.hpp>
 /**
  * Customize the static methods of an RTOS::ActiveObject
  */

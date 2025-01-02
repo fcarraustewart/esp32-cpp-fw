@@ -5,6 +5,29 @@
  */
 
 #include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&ledc0 {
+    pinctrl-0 = <&ledc0_custom>;
+    pinctrl-names = "default";
+    status = "okay";
+    #address-cells = <1>;
+    #size-cells = <0>;
+    channel0@0 {
+      reg = <0x0>;
+      timer = <0>;
+    };
+    // channel9@9 { add only as needed, and you should mirror the amount of channels with the amount of GPIOsss
+    //   reg = <0x9>;
+    //   timer = <0>;
+    // };
+    // channel10@a {
+    //   reg = <0xa>;
+    //   timer = <1>;
+    // };
+};
+
+
 
 &i2c0 {
     status = "okay";
@@ -59,11 +82,27 @@
 				 <I2C0_SCL_GPIO9>;
 		};
 	};
+	ledc0_custom:  ledc0_custom {
+		group1 {
+			 // Mirror to Channel0
+				pinmux = <LEDC_CH0_GPIO6>;
+				output-enable;
+		};
+	};
 };
 
 / {
 	aliases {
 		led-strip = &led_strip;
+		buzzer-pwm = &fading_leds;
+	};
+	
+	// /*Nordic example PWM*/
+	pwmbuzzer {
+		compatible = "pwm-leds";
+		fading_leds: fading_leds {
+			pwms = <&ledc0 0 PWM_HZ(880) PWM_POLARITY_NORMAL>;
+		};
 	};
 	chosen {
 		zephyr,console = &usb_serial;
@@ -71,6 +110,30 @@
 	};
 };
 
+/* PWM1 for buzzer control */
+// https://docs.zephyrproject.org/latest/build/dts/api/bindings/pwm/espressif%2Cesp32-ledc.html
+// ledc0_default: ledc0_default {
+// 	group1 {
+// 			pinmux = <LEDC_CH0_GPIO0>,
+// 					 <LEDC_CH1_GPIO2>,
+// 					 <LEDC_CH2_GPIO4>;
+// 			output-enable;
+// 	};
+// };
+// &ledc0 {
+// 	pinctrl-0 = <&ledc0_default>;
+// 	pinctrl-names = "default";
+// }
+
+
+// ledc0: ledc@60019000 {
+// 	compatible = "espressif,esp32-ledc";
+// 	pwm-controller;
+// 	#pwm-cells = <3>;
+// 	reg = <0x60019000 0x1000>;
+// 	clocks = <&rtc ESP32_LEDC_MODULE>;
+// 	status = "disabled";
+// };
 
 &usb_serial {
 	status = "okay";

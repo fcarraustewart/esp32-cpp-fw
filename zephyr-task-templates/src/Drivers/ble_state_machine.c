@@ -66,11 +66,11 @@ static void recycled_cb(void)
 	raise_evt(BT_SAMPLE_EVT_DISCONNECTED);
 }
 
-BT_CONN_CB_DEFINE(conn_cb) = {
-	.connected = connected_cb,
-	.disconnected = disconnected_cb,
-	.recycled = recycled_cb,
-};
+// BT_CONN_CB_DEFINE(conn_cb) = {
+// 	.connected = connected_cb,
+// 	.disconnected = disconnected_cb,
+// 	.recycled = recycled_cb,
+// };
 
 static int start_advertising(struct bt_le_ext_adv *adv)
 {
@@ -84,10 +84,6 @@ static int start_advertising(struct bt_le_ext_adv *adv)
 
 	return err;
 }
-
-static const struct bt_data ad[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
-};
 
 int ble_state_machine_run(void)
 {
@@ -111,7 +107,7 @@ int ble_state_machine_run(void)
 	}
 
 	/* Set advertising data to have complete local name set */
-	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_ext_adv_set_data(adv, adXX, ARRAY_SIZE(adXX), NULL, 0);
 	if (err) {
 		LOG_INF("Failed to set advertising data (err %d)\n", err);
 		return 0;
