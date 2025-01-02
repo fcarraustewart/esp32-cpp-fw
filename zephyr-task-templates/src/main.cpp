@@ -95,6 +95,8 @@ void sensor_thread_entry(void)
 	}
 }
 
+#include <Drivers/EdgeImpulse.hpp>
+
 int main(void)
 {
 	struct k_timer timer;
@@ -129,6 +131,8 @@ int main(void)
 
 			LOG_DBG("System time_now Timestamp %ul", time_now - start);
 		}
+
+		EImpulse::Run();
 	}
 
 	return 0;
