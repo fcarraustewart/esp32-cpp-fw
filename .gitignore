@@ -3,3 +3,4 @@ freertos-task-templates/.vscode/c_cpp_properties.json
 freertos-task-templates/.vscode/launch.json
 freertos-task-templates/.vscode/c_cpp_properties.json
 *.DS_Store
+.DS_Store
