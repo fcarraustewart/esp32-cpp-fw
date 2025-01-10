@@ -6,6 +6,7 @@ LOG_MODULE_REGISTER(LoRa);
 
 void Service::LoRa::Initialize() {
     LOG_INF("%s: LoRa Module Initialized correctly.", __FUNCTION__);
+	zpp::this_thread::set_priority(zpp::thread_prio::preempt(2));
 }
 
 void Service::LoRa::Handle(const uint8_t arg[]) {
@@ -59,7 +60,7 @@ namespace Service
 
 
     namespace {
-    ZPP_KERNEL_STACK_DEFINE(lorastack, 512);
+    ZPP_KERNEL_STACK_DEFINE(lorastack, 1024);
     template <>
     zpp::thread_data            _LoRa::mTaskControlBlock = zpp::thread_data();
     template <>

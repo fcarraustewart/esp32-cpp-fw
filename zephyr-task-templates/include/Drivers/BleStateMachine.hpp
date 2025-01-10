@@ -34,7 +34,7 @@ public:
     int Run() {
         int err;
 
-        LOG_INF("Starting BLE State Machine...");
+        LOG_DBG("Starting BLE State Machine...");
 
         // err = bt_enable(nullptr);
         // if (err) {
@@ -77,12 +77,12 @@ private:
     }
 
     void OnConnected() {
-        LOG_INF("State changed: Connected");
+        LOG_DBG("State changed: Connected");
         mCurrentState = State::Connected;
     }
 
     void OnDisconnected() {
-        LOG_INF("State changed: Disconnected. Restarting advertising...");
+        LOG_DBG("State changed: Disconnected. Restarting advertising...");
         mCurrentState = State::Advertising;
 
         if (SetupAdvertising()) {

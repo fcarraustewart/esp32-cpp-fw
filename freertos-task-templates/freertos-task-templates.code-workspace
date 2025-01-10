@@ -1,0 +1,126 @@
+{
+	"folders": [
+		{
+			"name": "freertos-task-templates",
+			"path": "."
+		},
+		{
+			"name": "zephyr-task-templates",
+			"path": "../zephyr-task-templates"
+		},
+		{
+			"name": "fcarraustewart.github.io",
+			"path": "../../../fcarraustewart.github.io"
+		},
+		{
+			"name": "pluralsight-linux-systems-programming",
+			"path": "../../pluralsight-linux-systems-programming"
+		},
+		{
+			"name": "PLURALSIGHT LEARNING",
+			"path": "../../PLURALSIGHT LEARNING"
+		},
+		{
+			"name": "SparkFun_BNO08x_Arduino_Library-main",
+			"path": "../../../Downloads/SparkFun_BNO08x_Arduino_Library-main"
+		},
+		{
+			"name": "bootloader",
+			"path": "../../../zephyrproject/bootloader"
+		},
+		{
+			"name": "samples",
+			"path": "../../../zephyrproject/zephyr/samples"
+		},
+		{
+			"path": "../../example-standalone-inferencing"
+		},
+		{
+			"path": "../../example-standalone-inferencing-zephyr"
+		},
+		{
+			"path": "../../../EspZephyrWS"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"exception": "cpp",
+			"eeprom.h": "c",
+			"i2c.h": "c",
+			"compare": "c",
+			"*.tcc": "cpp",
+			"array": "cpp",
+			"deque": "cpp",
+			"string": "cpp",
+			"unordered_map": "cpp",
+			"vector": "cpp",
+			"string_view": "cpp",
+			"initializer_list": "cpp",
+			"unordered_set": "cpp",
+			"regex": "cpp",
+			"complex": "cpp",
+			"random": "cpp",
+			"typeinfo": "cpp",
+			"__threading_support": "cpp",
+			"thread": "cpp",
+			"ios": "cpp",
+			"variant": "cpp",
+			"atomic": "cpp",
+			"bitset": "cpp",
+			"cctype": "cpp",
+			"chrono": "cpp",
+			"clocale": "cpp",
+			"cmath": "cpp",
+			"condition_variable": "cpp",
+			"cstdarg": "cpp",
+			"cstddef": "cpp",
+			"cstdint": "cpp",
+			"cstdio": "cpp",
+			"cstdlib": "cpp",
+			"cstring": "cpp",
+			"ctime": "cpp",
+			"cwchar": "cpp",
+			"cwctype": "cpp",
+			"algorithm": "cpp",
+			"any": "cpp",
+			"functional": "cpp",
+			"iterator": "cpp",
+			"memory": "cpp",
+			"memory_resource": "cpp",
+			"numeric": "cpp",
+			"optional": "cpp",
+			"ratio": "cpp",
+			"system_error": "cpp",
+			"tuple": "cpp",
+			"type_traits": "cpp",
+			"utility": "cpp",
+			"iomanip": "cpp",
+			"iosfwd": "cpp",
+			"istream": "cpp",
+			"limits": "cpp",
+			"mutex": "cpp",
+			"new": "cpp",
+			"ostream": "cpp",
+			"sstream": "cpp",
+			"stdexcept": "cpp",
+			"streambuf": "cpp",
+			"cinttypes": "cpp",
+			"bit": "cpp",
+			"codecvt": "cpp",
+			"concepts": "cpp",
+			"map": "cpp",
+			"netfwd": "cpp",
+			"fstream": "cpp",
+			"iostream": "cpp",
+			"numbers": "cpp",
+			"semaphore": "cpp",
+			"stop_token": "cpp",
+			"__mutex_base": "cpp",
+			"locale": "cpp",
+			"__hash_table": "cpp",
+			"__split_buffer": "cpp",
+			"queue": "cpp",
+			"stack": "cpp"
+		}
+	}
+}
