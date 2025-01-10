@@ -90,6 +90,7 @@ static const struct device *const strip = DEVICE_DT_GET(STRIP_NODE);
 size_t 	Service::LEDs::mColor = 0;
 int     Service::LEDs::mRc = 0;
 bool    Service::LEDs::mBuzzerDriverRunning = 0;
+bool    Service::LEDs::mThreadAnalizerDriverRunning = 0;
 
 void Service::LEDs::InitializeDriver(void){
     if (device_is_ready(strip)) {
@@ -120,11 +121,10 @@ void Service::LEDs::show(void) {
     mColor = (mColor + 4) % ARRAY_SIZE(colors);
 };
 
-extern "C"{
-    #include <Drivers/buzzer_output_drv.h>
-}
+#include <Drivers/BuzzerDriver.hpp>
+
 namespace {
-    ZPP_KERNEL_STACK_DEFINE(cWQStack, 2048);
+    ZPP_KERNEL_STACK_DEFINE(cWQStack, 4096);
     static zpp::thread buzzer_tid;
 }
 #include <System.hpp>
@@ -134,10 +134,9 @@ namespace {
 static zpp::WQBackgroundThread mDriverWorkerThread;
 static BleStateMachine mStateMachine;
 
+
 static void work_fn(struct k_work *w)
 {
-    LOG_INF("Run buzzer_thread");
-
     buzzer_thread();
     
     mStateMachine.RaiseEvent(BleStateMachine::Event::Connected);
@@ -162,8 +161,24 @@ void Service::LEDs::Initialize() {
     mDriverWorkerThread.Initialize(cWQStack().data(), cWQStack().size(), 
                     zpp::thread_prio::coop(7).native_value());
 
+	zpp::this_thread::set_priority(zpp::thread_prio::preempt(2));
     LOG_INF("\t\t\t%s: LEDs Module Initialized correctly.", __FUNCTION__);
-        	
+}
+
+#include <zephyr/debug/thread_analyzer.h>
+#include <zephyr/logging/log_ctrl.h>
+#define CMD_THREAD_TRACER_AVAILABLE 0xA3
+#define CMD_LOG_PANIC_THREAD_ANALYZER 0x66
+
+static void work_thread_tracer_log_fn(struct k_work *w)
+{
+	thread_analyzer_print(0);
+    // Driver Played Song: Let Service::LEDs know.
+    uint8_t m[5] = {CMD_THREAD_TRACER_AVAILABLE, 0x22, 0x00, 0x00, 0x00};
+    Service::LEDs::Send(m);
+	// return;
+	// zpp::this_thread::sleep_for(std::chrono::milliseconds(5));
+	// log_panic();
 }
 
 
@@ -173,6 +188,20 @@ void Service::LEDs::Handle(const uint8_t arg[]) {
      */
     switch(arg[0])
     {
+		case CMD_THREAD_TRACER_AVAILABLE:
+		{
+			mThreadAnalizerDriverRunning = false;
+		}; break;
+		case CMD_LOG_PANIC_THREAD_ANALYZER:
+		{
+            if(mThreadAnalizerDriverRunning == true)
+            {
+                // Send();
+                break;
+            }
+			mThreadAnalizerDriverRunning = true;
+            auto res = mDriverWorkerThread.ScheduleWork(work_thread_tracer_log_fn, zpp::to_timeout(std::chrono::milliseconds(10)));
+		}; break;
         case CMD_BUZZER_AVAILABLE:
         {
             mBuzzerDriverRunning = false;
@@ -183,7 +212,7 @@ void Service::LEDs::Handle(const uint8_t arg[]) {
         }; break;
         case CMD_BUZZER_INITIALIZATION_COMPLETE_SONG:
         {
-            LOG_INF("CMD_BUZZER_INITIALIZATION_COMPLETE_SONG Received");
+            LOG_DBG("CMD_BUZZER_INITIALIZATION_COMPLETE_SONG Received");
             
             // Use a workerQueue with worker_thread...
             // Launching the thread here is difficult to manage
@@ -219,7 +248,7 @@ void Service::LEDs::Handle(const uint8_t arg[]) {
             };
             
             auto res = mDriverWorkerThread.ScheduleWork(work_fn, zpp::to_timeout(std::chrono::milliseconds(500)));
-            LOG_INF("CMD_WORKQUEUE_SONG: Result (%s)", "res.message()" );
+            LOG_DBG("CMD_WORKQUEUE_SONG: Result (%s)", "res.message()" );
 
             mBuzzerDriverRunning = true;
         }; break;
@@ -267,7 +296,7 @@ namespace Service
                                     ] = { 0 };
 
     namespace {
-    ZPP_KERNEL_STACK_DEFINE(cLEDsStack, 768);
+    ZPP_KERNEL_STACK_DEFINE(cLEDsStack, 1024);
     template <>
     zpp::thread_data            _LEDs::mTaskControlBlock = zpp::thread_data();
     template <>

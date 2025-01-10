@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(Sensor, LOG_LEVEL_INF);
 #define SLEEPTIME	10
 
 #include <System.hpp>
-static uint8_t msgforLEDsBuzzer[] = {CMD_WORKQUEUE_SONG, 0x3};
+static uint8_t msgforLEDsBuzzer[] = {CMD_WORKQUEUE_SONG, 0x3, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 /**********************************/
 
 static void print_proxy_data(const struct device *dev)
@@ -37,6 +37,7 @@ static void print_proxy_data(const struct device *dev)
     {
         msgforLEDsBuzzer[1] = 2;
         Service::LEDs::Send(msgforLEDsBuzzer);
+        Service::BLE::Send(msgforLEDsBuzzer);
     }
 }
 #if defined(CONFIG_VCNL4040_ENABLE_ALS)
@@ -52,10 +53,11 @@ static void print_als_data(const struct device *dev)
 
 	LOG_DBG("Light (lux): %d\n", (uint16_t) val.val1);
 
-    if(val.val1 == 0)
+    if((1 <= val.val1) && (val.val1 <= 4))
     {
         msgforLEDsBuzzer[1] = 3;
         Service::LEDs::Send(msgforLEDsBuzzer);
+        Service::BLE::Send(msgforLEDsBuzzer);
     }
 }
 #endif
@@ -89,6 +91,9 @@ int Service::Sensor::send(void)
 void Service::Sensor::Initialize() {
     // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
     // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();
+	// zpp::this_thread::set_priority(zpp::thread_prio::preempt(2));
+	zpp::this_thread::sleep_for(std::chrono::milliseconds(3000)); // allow interface MCU complete booting before dummy read
+
 	if(!InitializeDriver())        	
     	LOG_INF("%s: Sensor Module Initialized correctly.", __FUNCTION__);
 }
@@ -144,7 +149,7 @@ namespace Service
                                     ] = { 0 };
 
     namespace {
-    ZPP_KERNEL_STACK_DEFINE(cSensorThreadStack, 512);
+    ZPP_KERNEL_STACK_DEFINE(cSensorThreadStack, 1024);
     template <>
     zpp::thread_data            _Sensor::mTaskControlBlock = zpp::thread_data();
     template <>
