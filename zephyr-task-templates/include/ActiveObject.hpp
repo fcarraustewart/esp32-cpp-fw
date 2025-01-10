@@ -13,6 +13,7 @@ namespace RTOS
     public:
         static constexpr void Create()
         {
+			mHandle.set_name((char*)mName);
             RTOS::Hal::TaskCreate(&Run, mName, &mHandle);
         };
         static constexpr void Run(void) noexcept

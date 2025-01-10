@@ -1,5 +1,8 @@
 #include <Drivers/EdgeImpulse.hpp>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(DSP, LOG_LEVEL_INF);
+
 // Zephyr 3.1.x and newer uses different include scheme
 #include <version.h>
 #if (KERNEL_VERSION_MAJOR > 3) || ((KERNEL_VERSION_MAJOR == 3) && (KERNEL_VERSION_MINOR >= 1))
@@ -12,6 +15,8 @@
 #ifdef EI_NORDIC
 #include <nrfx_clock.h>
 #endif
+
+#include <Utils/zpp.hpp>
 
 static const float features[] = {
     // copy raw features here (for example from the 'Live classification' page)
@@ -32,12 +37,12 @@ int EImpulse::Run() {
     // Switch CPU core clock to 128 MHz
     nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK, NRF_CLOCK_HFCLK_DIV_1);
 #endif
-    k_msleep(5000);
 
-    printk("Edge Impulse standalone inferencing (Zephyr)\n");
+	zpp::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    LOG_DBG("Edge Impulse standalone inferencing (Zephyr)\n");
 
     if (sizeof(features) / sizeof(float) != EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE) {
-        printk("The size of your 'features' array is not correct. Expected %d items, but had %u\n",
+        LOG_DBG("The size of your 'features' array is not correct. Expected %d items, but had %u\n",
             EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE, sizeof(features) / sizeof(float));
         return 1;
     }
@@ -52,11 +57,11 @@ int EImpulse::Run() {
 
         // invoke the impulse
         EI_IMPULSE_ERROR res = run_classifier(&features_signal, &result, false);
-        printk("run_classifier returned: %d\n", res);
+        LOG_DBG("run_classifier returned: %d\n", res);
 
         if (res != 0) return 1;
 
-        printk("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+        LOG_DBG("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
                 result.timing.dsp, result.timing.classification, result.timing.anomaly);
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
         bool bb_found = result.bounding_boxes[0].value > 0;
@@ -65,22 +70,23 @@ int EImpulse::Run() {
             if (bb.value == 0) {
                 continue;
             }
-            printk("    %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
+            LOG_DBG("    %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
         }
         if (!bb_found) {
-            printk("    No objects found\n");
+            LOG_DBG("    No objects found\n");
         }
 #else
         for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-            printk("    %s: %.5f\n", result.classification[ix].label,
+            LOG_DBG("    %s: %.5f\n", result.classification[ix].label,
                                     result.classification[ix].value);
             if(result.classification[ix].value > 0.90f)
-                printk("    \t\t %s result.classification[%d].value (%d) => 0.90 ",result.classification[ix].label, ix, 100*(int)result.classification[ix].value);
+                LOG_DBG("    \t\t %s result.classification[%d].value (%d) => 0.90 ",result.classification[ix].label, ix, 100*(int)result.classification[ix].value);
         }
 #if EI_CLASSIFIER_HAS_ANOMALY == 1
-        printk("    anomaly score: %.3f\n", result.anomaly);
+        LOG_DBG("    anomaly score: %.3f\n", result.anomaly);
 #endif
 #endif
-        k_msleep(4);
+    	zpp::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		LOG_INF("\t\tEnd;");
     }
 }

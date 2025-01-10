@@ -28,6 +28,7 @@ namespace Service {
 		static size_t mColor;
 		static int mRc;
 		static bool mBuzzerDriverRunning;
+		static bool mThreadAnalizerDriverRunning;
 	};
 }
 

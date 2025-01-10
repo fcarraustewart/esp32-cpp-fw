@@ -12,9 +12,8 @@
 #include <zephyr/bluetooth/services/nus.h>
 #include <zephyr/sys/util.h>
 
-#define LOG_LEVEL 3
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(BLE);
+LOG_MODULE_REGISTER(BLE, LOG_LEVEL_INF);
 
 #define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
@@ -88,9 +87,6 @@ int Service::BLE::send(const void *arg, uint16_t len)
 
     err = bt_nus_send(NULL, arg, len);
     
-	if(err == 0)
-		LOG_DBG("Data send - Result: %d\n", err);
-
     if (err < 0 && (err != -EAGAIN) && (err != -ENOTCONN)) {
         return err;
     }
@@ -344,7 +340,7 @@ namespace Service
                                     ] = { 0 };
 
 	namespace {
-    ZPP_KERNEL_STACK_DEFINE(cBLEThreadStack, 2048);
+    ZPP_KERNEL_STACK_DEFINE(cBLEThreadStack, 4096);
     template <>
     zpp::thread_data            _BLE::mTaskControlBlock = zpp::thread_data();
     template <>
@@ -357,3 +353,79 @@ namespace Service
     } //https://www.reddit.com/r/cpp/comments/4ukhh5/what_is_the_purpose_of_anonymous_namespaces/#:~:text=The%20purpose%20of%20an%20anonymous,will%20not%20have%20internal%20linkage.
                                   
 }
+
+/*
+# Uncoded LE Data Packet Format:
+#
+# | Preamble | Access  |                           PDU (2 to 257 bytes)                         |   CRC   |
+# |          | Address | LL Header |       Link Layer PDU (0 to 251 bytes)           |    MIC   |         |
+# |          |         |           | L2CAP Header |      L2CAP PDU (0-247 bytes)     | Optional |         |
+# |          |         |           |              |    ATT Header    |  ATT Payload  |          |         |
+# |          |         |           |              | OpCode | Handle  |               |          |         |
+# |  1 byte  | 4 bytes |  2 bytes  |   4 bytes    | 1 byte | 2 bytes | 0 - 244 bytes | 4 bytes  | 3 bytes |
+#
+# L2CAP can be larger than 247 bytes, but will be split across multiple LL packets as a result.
+# ATT payloads can be larger than 244 bytes, but will be split across multiple LL packets as a result.
+# 
+#
+# Kconfig Symbols:
+#     CONFIG_BT_CTLR_DATA_LENGTH_MAX : Maximum payload size of the Link Layer PDU
+#     CONFIG_BT_BUF_ACL_TX_SIZE      : Maximum L2CAP PDU is limited to this value - 4
+#     CONFIG_BT_BUF_ACL_RX_SIZE      : Maximum L2CAP PDU is limited to this value - 4
+#     CONFIG_BT_L2CAP_TX_MTU         : Maximum L2CAP PDU size for transmission
+# AUTO UPDATE PARAMS
+# https://github.com/zephyrproject-rtos/zephyr/issues/82954
+# Fix recycling advertising with /zephyr/samples/bluetooth/extended_adv/advertiser/src/main.c
+# Reduce Bluetooth buffers
+# CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT=4
+# CONFIG_BT_BUF_EVT_RX_COUNT=8
+# CONFIG_BT_L2CAP_TX_BUF_COUNT=16
+# CONFIG_BT_CTLR_TX_PWR_MINUS_8=y
+
+# CONFIG_BT_LOG_LEVEL_DEFAULT=y
+# CONFIG_BT_LOG_LEVEL=4
+# CONFIG_BT_HCI_DRIVER_LOG_LEVEL_INHERIT=y
+# CONFIG_BT_HCI_DRIVER_LOG_LEVEL=3
+# CONFIG_BT_RPA_LOG_LEVEL_INHERIT=y
+# CONFIG_BT_RPA_LOG_LEVEL=3
+# CONFIG_BT_ATT_LOG_LEVEL_INHERIT=y
+# CONFIG_BT_ATT_LOG_LEVEL=3
+# CONFIG_BT_GATT_LOG_LEVEL_INHERIT=y
+# CONFIG_BT_GATT_LOG_LEVEL=3
+# CONFIG_BT_L2CAP_LOG_LEVEL_INHERIT=y
+# CONFIG_BT_L2CAP_LOG_LEVEL=3
+# CONFIG_BT_HCI_CORE_LOG_LEVEL_INHERIT=y
+# CONFIG_BT_HCI_CORE_LOG_LEVEL=3
+# CONFIG_BT_CONN_LOG_LEVEL_INHERIT=y
+# CONFIG_BT_CONN_LOG_LEVEL=3
+# CONFIG_BT_KEYS_LOG_LEVEL_INHERIT=y
+# CONFIG_BT_KEYS_LOG_LEVEL=3
+# CONFIG_BT_SERVICE_LOG_LEVEL_INHERIT=y
+# CONFIG_BT_SERVICE_LOG_LEVEL=3
+
+#PHY
+# #define 	BT_CONN_LE_PHY_PARAM_2M
+#  	Only LE 2M PHY.
+ 
+# #define 	BT_CONN_LE_PHY_PARAM_CODED
+#  	Only LE Coded PHY.
+ 
+# #define 	BT_CONN_LE_PHY_PARAM_ALL
+#  	All LE PHYs.
+ 
+# #define 	BT_CONN_LE_DATA_LEN_PARAM_INIT(_tx_max_len, _tx_max_time)
+#  	Initialize transmit data length parameters.
+ 
+# #define 	BT_CONN_LE_DATA_LEN_PARAM(_tx_max_len, _tx_max_time)
+#  	Helper to declare transmit data length parameters inline.
+ 
+# #define 	BT_LE_DATA_LEN_PARAM_DEFAULT
+#This is the maximum data length with Nordic Softdevice controller
+#These buffers are needed for the data length max. 
+#This is the maximum MTU size with Nordic Softdevice controller
+#https://devzone.nordicsemi.com/guides/nrf-connect-sdk-guides/b/software/posts/building-a-bluetooth-application-on-nrf-connect-sdk-part-3-optimizing-the-connection
+# HCI ACL buffers size
+# BT_L2CAP_RX_MTU = CONFIG_BT_BUF_ACL_RX_SIZE - BT_L2CAP_HDR_SIZE
+
+
+*/

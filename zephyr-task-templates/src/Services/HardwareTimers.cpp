@@ -1,13 +1,38 @@
 #include <Services/HardwareTimers.hpp>
 
-#define LOG_LEVEL 3
+#include <System.hpp>
+
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(HardwareTimers);
+LOG_MODULE_REGISTER(HardwareTimers, LOG_LEVEL_INF);
+
+namespace {
+	#define CMD_HW_TIMER_1 0x11
+	static struct k_timer timer;
+	static volatile uint16_t count = 0;
+	static uint8_t msgforHWTimers[] = {CMD_HW_TIMER_1, 0x3, 0x0, 0x0, 0x0, 0x0, 0x0};
+	static uint8_t msgforlora[] = {0x04,0x03,0x02,0x01,0x06};
+	static uint8_t msgforLEDsLEDShow[] = {CMD_LEDs_SHOW,0x03,0x02,0x01,0x06};
+	static uint8_t msgforLEDsBuzzer[] = {CMD_WORKQUEUE_SONG,0x00,0x02,0x01,0x06};
+	static uint8_t msgforLEDsLogPanic[] = {0x66,0,0,0,0};
+	volatile k_timer_expiry_t timer_expiry_fn = [](struct k_timer *timer_id) {
+		Service::HardwareTimers::Send(msgforHWTimers);
+	};
+}
+
+
 
 void Service::HardwareTimers::Initialize() {
     // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
     // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();        	
     LOG_INF("%s: HardwareTimers Module Initialized correctly.", __FUNCTION__);
+
+	zpp::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+	k_timer_init(&timer, timer_expiry_fn, NULL);
+
+	k_timer_start(&timer, K_MSEC(60), K_TIMEOUT_ABS_MS(10));
+
+	zpp::this_thread::set_priority(zpp::thread_prio::preempt(2));
 }
 
 void Service::HardwareTimers::Handle(const uint8_t arg[]) {
@@ -16,6 +41,40 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]) {
      */
     switch(arg[0])
     {
+		case CMD_HW_TIMER_1:
+		{
+			count++;
+			// uint16_t m_count = *(uint16_t*)&arg[1];
+			if(count%4 == 0)
+			{
+				LOG_DBG("msgforHWTimers %d times.", count);
+				Service::IMU::Send(msgforHWTimers);
+			}
+			if(count%89 == 0)
+			{
+				LOG_DBG("msgforHWTimers %d times.", count);
+				Service::Sensor::Send(msgforHWTimers);
+			}
+			if(count%90 == 0)
+			{
+				LOG_DBG("msgforLEDsLEDShow %d times.", count);
+				Service::LEDs::Send(msgforLEDsLEDShow);
+			}
+			if(count == 32000) {
+				Service::LEDs::Send(msgforLEDsLogPanic);
+			}
+			if(count%4000 == 0) {
+				msgforLEDsBuzzer[1] = 4;
+				Service::LEDs::Send(msgforLEDsBuzzer);
+				// Service::LoRa::Send(msgforlora);
+			}
+			if(count == 12000) {
+				msgforLEDsBuzzer[1] = 0;
+				Service::LEDs::Send(msgforLEDsBuzzer);
+				count = 0;
+			}
+			
+		}; break;
         default:
         {
             LOG_DBG("[Service::%s]::%s():\t%x.\tNYI.", mName, __func__, arg[0]);   
@@ -60,7 +119,7 @@ namespace Service
                                     ] = { 0 };
 
     namespace {
-    ZPP_KERNEL_STACK_DEFINE(hwtimersstack, 512);
+    ZPP_KERNEL_STACK_DEFINE(hwtimersstack, 768);
     template <>
     zpp::thread_data            _HardwareTimers::mTaskControlBlock = zpp::thread_data();
     template <>
