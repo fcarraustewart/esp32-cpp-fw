@@ -14,7 +14,7 @@ namespace Service
         static void End(){
         };
 
-        HardwareTimers() : RTOS::ActiveObject<HardwareTimers>(){};
+        constexpr HardwareTimers() : RTOS::ActiveObject<HardwareTimers>(){};
     private:
     };
 

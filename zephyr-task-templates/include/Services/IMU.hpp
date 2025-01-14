@@ -15,7 +15,7 @@ namespace Service
         static void End(){
         };
 
-        IMU() : RTOS::ActiveObject<IMU>(){};
+        constexpr IMU() : RTOS::ActiveObject<IMU>(){};
     private:
         static void InitializeDriver();
         static int  Begin();

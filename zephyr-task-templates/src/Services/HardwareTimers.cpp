@@ -55,18 +55,18 @@ void Service::HardwareTimers::Handle(const uint8_t arg[]) {
 				LOG_DBG("msgforHWTimers %d times.", count);
 				Service::Sensor::Send(msgforHWTimers);
 			}
-			if(count%90 == 0)
+			if(count%77 == 0)
 			{
 				LOG_DBG("msgforLEDsLEDShow %d times.", count);
 				Service::LEDs::Send(msgforLEDsLEDShow);
 			}
-			if(count == 32000) {
-				Service::LEDs::Send(msgforLEDsLogPanic);
-			}
-			if(count%4000 == 0) {
+			if(count%4096 == 0) {
 				msgforLEDsBuzzer[1] = 4;
 				Service::LEDs::Send(msgforLEDsBuzzer);
-				// Service::LoRa::Send(msgforlora);
+				Service::LoRa::Send(msgforlora);
+			}
+			if(count%8000 == 0) {
+				Service::LEDs::Send(msgforLEDsLogPanic);
 			}
 			if(count == 12000) {
 				msgforLEDsBuzzer[1] = 0;
@@ -92,7 +92,7 @@ namespace Service
     using                       _HardwareTimers = RTOS::ActiveObject<Service::HardwareTimers>;
 
     template <>
-    const uint8_t               _HardwareTimers::mName[] =  "HardwareTimers";
+    const char               	_HardwareTimers::mName[] =  "HardwareTimers";
     template <>
     uint8_t                     _HardwareTimers::mCountLoops = 0;
     template <>

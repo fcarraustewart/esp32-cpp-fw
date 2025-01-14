@@ -16,7 +16,7 @@ namespace Service {
         static void End(){
         };
 
-        BLE() : RTOS::ActiveObject<BLE>(){};
+        constexpr BLE() : RTOS::ActiveObject<BLE>(){};
     private:
     };
 }

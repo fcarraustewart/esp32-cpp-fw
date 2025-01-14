@@ -1,6 +1,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zpp/result.hpp> // Assuming the zpp::result header is included from the zpp library
+#include <hal/RTOS.hpp>
 
 namespace zpp {
 
@@ -35,12 +36,19 @@ public:
      * @param delay Timeout duration for scheduling the work.
      * @return Result indicating success or failure.
      */
-    zpp::error_result<zpp::error_code> ScheduleWork(void (*workFn)(struct k_work *), k_timeout_t delay) {
+    zpp::error_result<zpp::error_code> ScheduleWork(RTOS::BackgroundWorkFn_t workFn, RTOS::Delay_t delay) {
         if (!workFn) {
             LOG_ERR("Work function is null.");
             return zpp::error_result(zpp::error_code::k_inval);
         }
-
+		// Check if the work is already busy, 
+		//if it is, a delayable work item cannot be rescheduled
+		// We could have an array of work items and check if any of them are busy
+		if (k_work_delayable_busy_get(&mWork) != 0) {
+			LOG_ERR("Work is already busy.");
+			return zpp::error_result(zpp::error_code::k_busy);
+		}
+		// Initialize the work item
         k_work_init_delayable(&mWork, workFn);
 
         int res = k_work_reschedule_for_queue(&mWorkQueue, &mWork, delay);
@@ -49,13 +57,13 @@ public:
             return zpp::error_result(zpp::error_code::k_again);
         }
 
-        LOG_INF("Work scheduled successfully with delay %d", delay.ticks);
+        LOG_INF("Work scheduled successfully with delay %lld", delay.ticks);
         return zpp::error_result(zpp::error_code::k_io);
     }
 
 private:
-    struct k_work_q mWorkQueue;
-    struct k_work_delayable mWork;
+    RTOS::BackgroundWorkQueue_t 	mWorkQueue;
+    RTOS::BackgroundDelWorkHelper_t mWork;
 };
 
 } // namespace zpp

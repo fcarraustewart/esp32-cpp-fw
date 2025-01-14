@@ -32,7 +32,7 @@ namespace Service
     using                       _LoRa = RTOS::ActiveObject<Service::LoRa>;
 
     template <>
-    const uint8_t               _LoRa::mName[] =  "LoRa";
+    const char               	_LoRa::mName[] =  "LoRa";
     template <>
     uint8_t                     _LoRa::mCountLoops = 0;
     template <>

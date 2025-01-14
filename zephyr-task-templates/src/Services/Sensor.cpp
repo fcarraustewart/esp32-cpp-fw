@@ -92,7 +92,7 @@ void Service::Sensor::Initialize() {
     // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
     // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();
 	// zpp::this_thread::set_priority(zpp::thread_prio::preempt(2));
-	zpp::this_thread::sleep_for(std::chrono::milliseconds(3000)); // allow interface MCU complete booting before dummy read
+	zpp::this_thread::sleep_for(std::chrono::milliseconds(5000)); // allow interface MCU complete booting before dummy read
 
 	if(!InitializeDriver())        	
     	LOG_INF("%s: Sensor Module Initialized correctly.", __FUNCTION__);
@@ -122,7 +122,7 @@ namespace Service
     using                       _Sensor = RTOS::ActiveObject<Service::Sensor>;
 
     template <>
-    const uint8_t               _Sensor::mName[] =  "Sensor";
+    const char               	_Sensor::mName[] =  "Sensor";
     template <>
     uint8_t                     _Sensor::mCountLoops = 0;
     template <>

@@ -135,8 +135,7 @@ static zpp::WQBackgroundThread mDriverWorkerThread;
 static BleStateMachine mStateMachine;
 
 
-static void work_fn(struct k_work *w)
-{
+static void work_fn(RTOS::BackgroundWorkHelper_t *w) {
     buzzer_thread();
     
     mStateMachine.RaiseEvent(BleStateMachine::Event::Connected);
@@ -161,7 +160,7 @@ void Service::LEDs::Initialize() {
     mDriverWorkerThread.Initialize(cWQStack().data(), cWQStack().size(), 
                     zpp::thread_prio::coop(7).native_value());
 
-	zpp::this_thread::set_priority(zpp::thread_prio::preempt(2));
+	zpp::this_thread::set_priority(zpp::thread_prio::preempt(4));
     LOG_INF("\t\t\t%s: LEDs Module Initialized correctly.", __FUNCTION__);
 }
 
@@ -170,10 +169,10 @@ void Service::LEDs::Initialize() {
 #define CMD_THREAD_TRACER_AVAILABLE 0xA3
 #define CMD_LOG_PANIC_THREAD_ANALYZER 0x66
 
-static void work_thread_tracer_log_fn(struct k_work *w)
+static void work_thread_tracer_log_fn(RTOS::BackgroundWorkHelper_t *w)
 {
 	thread_analyzer_print(0);
-    // Driver Played Song: Let Service::LEDs know.
+    // Driver Printed Tracer: Let Service::LEDs know.
     uint8_t m[5] = {CMD_THREAD_TRACER_AVAILABLE, 0x22, 0x00, 0x00, 0x00};
     Service::LEDs::Send(m);
 	// return;
@@ -199,8 +198,11 @@ void Service::LEDs::Handle(const uint8_t arg[]) {
                 // Send();
                 break;
             }
-			mThreadAnalizerDriverRunning = true;
+			
             auto res = mDriverWorkerThread.ScheduleWork(work_thread_tracer_log_fn, zpp::to_timeout(std::chrono::milliseconds(10)));
+			if(res.error() != zpp::error_code::k_busy)
+				mThreadAnalizerDriverRunning = true;
+
 		}; break;
         case CMD_BUZZER_AVAILABLE:
         {
@@ -216,7 +218,9 @@ void Service::LEDs::Handle(const uint8_t arg[]) {
             
             // Use a workerQueue with worker_thread...
             // Launching the thread here is difficult to manage
-            buzzer_tid.wakeup();
+            auto res = buzzer_tid.wakeup();
+			if(res.has_value() == false)
+			{ LOG_ERR("buzzer_tid.wakeup() failed."); }
             
         }; break;
         case CMD_WORKQUEUE_SONG:
@@ -248,9 +252,9 @@ void Service::LEDs::Handle(const uint8_t arg[]) {
             };
             
             auto res = mDriverWorkerThread.ScheduleWork(work_fn, zpp::to_timeout(std::chrono::milliseconds(500)));
-            LOG_DBG("CMD_WORKQUEUE_SONG: Result (%s)", "res.message()" );
+			if(res.error() != zpp::error_code::k_busy)
+            	mBuzzerDriverRunning = true;
 
-            mBuzzerDriverRunning = true;
         }; break;
         default:
         {
@@ -269,7 +273,7 @@ namespace Service
     using                       _LEDs = RTOS::ActiveObject<Service::LEDs>;
 
     template <>
-    const uint8_t               _LEDs::mName[] =  "LEDs";
+    const char               	_LEDs::mName[] =  "LEDs";
     template <>
     uint8_t                     _LEDs::mCountLoops = 0;
     template <>

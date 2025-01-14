@@ -4,21 +4,35 @@
 #include <hal/RTOS.hpp>
 //#include <Logger.hpp>
 
-
 namespace RTOS
 {
+	// Work in progress: adding concepts to the ActiveObject
+	template <typename T>
+	concept StaticBinding_Impl = requires (T t) 
+	{ 
+		{ t.Initialize () } -> std::same_as < void >;
+		{ t.Loop () } -> std::same_as < void >;
+		{ t.Handle () } -> std::same_as < void >;
+		{ t.End () } -> std::same_as < void >;
+	};
+
     template <class D>
     class ActiveObject
     {
     public:
-        static constexpr void Create()
+		constexpr ActiveObject() {Create();};
+		
+		~ActiveObject() = default;
+
+        static constexpr bool Create()
         {
-			mHandle.set_name((char*)mName);
-            RTOS::Hal::TaskCreate(&Run, mName, &mHandle);
+			auto res = mHandle.set_name(mName);
+			if(res.has_value() == false)
+				return false;
+			return RTOS::Hal::TaskCreate(&Run, mName, &mHandle);
         };
         static constexpr void Run(void) noexcept
         {
-            // arg not used.
             D::Initialize();
 
             while(1)
@@ -31,19 +45,18 @@ namespace RTOS
             if(true == RTOS::Hal::QueueReceive(&mInputQueue, (void*)mReceivedMsg))
                 D::Handle(mReceivedMsg);
         };
-        static void Send(const uint8_t msg[])
+        static inline void Send(const uint8_t msg[])
         {
             RTOS::Hal::QueueSend(&mInputQueue, msg);
         };
     private:
     protected:
-        ActiveObject() {};
 
     /**
      *                  Member Variables:
      */
     public:
-        static const    uint8_t         mName[];                    /**< The variables used to create the queue */
+        static const    char         	mName[];                    /**< The variables used to create the queue */
         static const    uint8_t         mInputQueueItemSize;        /**< The variables used to create the queue */
     protected:
         static          uint8_t         mCountLoops;                /**< The variables used to create the queue */

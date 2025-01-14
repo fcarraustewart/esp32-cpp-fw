@@ -20,7 +20,7 @@ namespace Service {
         static void End(){
         };
 
-        Sensor() : RTOS::ActiveObject<Sensor>(){};
+        constexpr Sensor() : RTOS::ActiveObject<Sensor>(){};
     private:
         static int InitializeDriver(void);
         static int send(void);

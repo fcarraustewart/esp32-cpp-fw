@@ -14,7 +14,7 @@ namespace Service
         static void End(){
         };
 
-        LoRa() : RTOS::ActiveObject<LoRa>(){};
+        constexpr LoRa() : RTOS::ActiveObject<LoRa>(){};
     private:
     };
 

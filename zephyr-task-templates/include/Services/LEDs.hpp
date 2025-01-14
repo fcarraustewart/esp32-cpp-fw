@@ -22,7 +22,7 @@ namespace Service {
         static void End(){
         };
 
-        LEDs() : RTOS::ActiveObject<LEDs>(){};
+        constexpr LEDs() : RTOS::ActiveObject<LEDs>(){};
 
 	private:
 		static size_t mColor;

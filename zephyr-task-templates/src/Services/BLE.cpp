@@ -313,7 +313,7 @@ namespace Service
     using                       _BLE = RTOS::ActiveObject<Service::BLE>;
 
     template <>
-    const uint8_t               _BLE::mName[] =  "BLEss";
+    const char               	_BLE::mName[] =  "BLEss";
     template <>
     uint8_t                     _BLE::mCountLoops = 0;
     template <>

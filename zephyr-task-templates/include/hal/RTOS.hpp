@@ -25,14 +25,19 @@ namespace RTOS
         zpp::thread_inherit_perms::no,
         zpp::thread_suspend::yes
     );
-    typedef k_msgq QueueHandle_t   ;
-    typedef zpp::thread TaskHandle_t    ;
-    typedef k_thread_entry_t TaskFunction_t  ;
+    using QueueHandle_t 			= 	k_msgq;
+    using TaskFunction_t 			= 	k_thread_entry_t;
+    using TaskHandle_t 				= 	zpp::thread;
+	using BackgroundWorkFn_t 		= 	void (*)(struct k_work *);
+    using BackgroundWorkHelper_t 	= 	k_work;
+    using BackgroundWorkQueue_t 	= 	k_work_q;
+	using BackgroundDelWorkHelper_t = 	k_work_delayable;
+	using Delay_t 					= 	k_timeout_t;
 #endif
     using   func_t = void (*)() noexcept;
     struct Hal
     {
-        static void inline TaskCreate(func_t thread, const uint8_t name[], TaskHandle_t* handle) 
+        static bool inline TaskCreate(func_t thread, const char name[], TaskHandle_t* handle) 
         {
         #if SystemUsesFreeRTOS == 1
             xTaskCreate(&thread, name, 4096, 
@@ -43,8 +48,7 @@ namespace RTOS
         #if SystemUsesZephyrRTOS == 1
         ARG_UNUSED(thread);
         ARG_UNUSED(name);
-        
-            if(handle->start());
+			return handle->start().has_value();
             
         #endif
 
@@ -67,6 +71,10 @@ namespace RTOS
             return false;
         };
         static void QueueSend(void * queue, const uint8_t msg[]);
+		static inline void Delay(uint32_t ms)
+		{
+			zpp::this_thread::sleep_for(std::chrono::milliseconds(ms));
+		};
     };
 }
 #endif

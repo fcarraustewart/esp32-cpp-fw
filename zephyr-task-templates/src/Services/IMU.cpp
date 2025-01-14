@@ -14,12 +14,11 @@ LOG_MODULE_REGISTER(IMU, LOG_LEVEL_INF);
 #define IMU_MAG_ADDRESS (0x4a  )
 
 #define SCALE_Q(n) (1.0f / (1 << n))
-
-const float scaleRadToDeg = 180.0 / 3.14159265358;
+static constexpr double pi = 3.14159265358979323846;
+static constexpr double scaleRadToDeg = (double)180.0f / pi;
+static constexpr double conversion = ((double)180.0f / 3.14159265358)*((double)SCALE_Q(14));
 
 // The IMU's interrupt output pin is connected to P0.25
-
-typedef void (*fptr)(void);
 int IMU_readRegister(uint8_t RegNum, uint8_t *Value);
 int IMU_writeRegister(uint8_t RegNum, uint8_t Value);
 int IMU_writeMagRegister(uint8_t RegNum, uint8_t Value);
@@ -28,7 +27,7 @@ void readCalibrationData();
 static const struct device *i2c;
 int Service::IMU::Begin()
 {
-	int nack;
+	int nack = 0;
 	uint8_t header[4];
 	uint8_t dummy_value[64];
 	uint8_t buf[32];
@@ -145,7 +144,7 @@ int Service::IMU::Begin()
 		memcpy(header, buf, 4);
 		length = ((((uint16_t)(header[1])<<8)&0x7f00) )|( ((header[0])&0x00ff));
 		
-		LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
+		LOG_DBG("\t\t\t\t Empty reads i2c %x\n", length);
 	}
 	memset(dummy_value, 0, 64);
 	dummy_value[0]=0x15; //Set Feature 
@@ -253,7 +252,6 @@ struct IMU_SHTP_PACKET
 	uint32_t header;
 	uint8_t data[64];
 };
-static const double conversion = (180.0f / 3.14159265358)*(1.0f / (1<<14));
 
 int Service::IMU::ReadRotXYZ() // returns Temperature * 100
 {
@@ -284,7 +282,7 @@ int Service::IMU::ReadRotXYZ() // returns Temperature * 100
 		previous_data_buffer_continues = header[1]&0x80;
 		length = (((uint16_t)(header[1])<<8)&0x7f00) | ((header[0])&0x00ff); 
 		if(header[2]==3){
-			LOG_HEXDUMP_DBG(dummy_value, length, "ROT"); 
+			LOG_HEXDUMP_INF(dummy_value, length, "ROT"); 
 
             //sign_roll = -1 if(message[0]&0x80) else 1
             //sign_pitch = -1 if(message[2]&0x80) else 1
@@ -303,18 +301,6 @@ int Service::IMU::ReadRotXYZ() // returns Temperature * 100
 			Service::BLE::Send(send);
 		
 			LOG_DBG("Rot : \t\t(\t%d, \t%d, \t%d).\n",(int)roll,(int)pitch,(int)yaw);
-		} else {
-
-			uint16_t length, nack;
-			uint8_t buf[32],header[4];
-			while(length > 0){
-				nack = i2c_read(	i2c,	buf,	32,		IMU_ACCEL_ADDRESS);
-
-				memcpy(header, buf, 4);
-				length = ((((uint16_t)(header[1])<<8)&0x7f00) )|( ((header[0])&0x00ff));
-				
-				LOG_INF("\t\t\t\t Empty reads i2c %x\n", length);
-			}
 		}
 
 		
@@ -503,24 +489,173 @@ void Service::IMU::InitializeDriver() {
 		}
 	}
 }
+
+#include <Drivers/BNO085.h>
+#include <edge-impulse-sdk/dsp/numpy.hpp>
+
+static BNO085 Motion;
+
+struct euler_t {
+  float yaw;
+  float pitch;
+  float roll;
+} ypr;
+
+#ifdef FAST_MODE
+	// Top frequency is reported to be 1000Hz (but freq is somewhat variable)
+	sh2_SensorId_t reportType = SH2_GYRO_INTEGRATED_RV;
+	long reportIntervalUs = 2000;
+#else
+	// Top frequency is about 250Hz but this report is more accurate
+	sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
+	long reportIntervalUs = 5000;
+#endif
+
+void setReports(sh2_SensorId_t reportType, long report_interval) {
+  LOG_INF("Setting desired reports");
+}
+
 void Service::IMU::Initialize() {
     // #define EVENTS_INTERESTED RTOS::MsgBroker::Event::BLE_Connected , ...
     // System::mMsgBroker::Subscribe<EVENTS_INTERESTED>();  
-	InitializeDriver();      	
-    LOG_INF("%s: IMU Module Initialized correctly.", __FUNCTION__);
+	InitializeDriver();
+	/*
+	ADAFRUIT
+	*/
+	uint8_t imu_timer=0;
+	RTOS::Hal::Delay(600);
+	while(imu_timer>128){
+		RTOS::Hal::Delay(60);
+		ReadRotXYZ();
+		imu_timer++;
+	}
+
+	imu_timer = 0;
+	RTOS::Hal::Delay(1000);
+	Wire.begin();
+	Wire.beginTransmission(0x4a);
+	// Wire.setClock(100000);
+	while (Motion.begin( &Wire ) == false) {
+		RTOS::Hal::Delay(100);
+	}
+  	Wire.endTransmission();
+
+	if(Motion.enableRotationVector(60) == true) {
+		LOG_DBG("enableGeomagneticRotationVector enabled");
+	}
+	if(Motion.enableGeomagneticRotationVector(60) == true) {
+		LOG_DBG("enableGeomagneticRotationVector enabled");
+	}
+	if(Motion.enableGameRotationVector(60) == true) {
+		LOG_DBG("enableGeomagneticRotationVector enabled");
+	}
+
+	LOG_INF("%s: IMU Module Initialized correctly.", __FUNCTION__);
+}
+
+void quaternionToEuler(float qr, float qi, float qj, float qk, euler_t* ypr, bool degrees = false) {
+
+    float sqr = ei::numpy::sqrt(qr);
+    float sqi = ei::numpy::sqrt(qi);
+    float sqj = ei::numpy::sqrt(qj);
+    float sqk = ei::numpy::sqrt(qk);
+
+    ypr->yaw = atan2(2.0 * (qi * qj + qk * qr), (sqi - sqj - sqk + sqr));
+    ypr->pitch = asin(-2.0 * (qi * qk - qj * qr) / (sqi + sqj + sqk + sqr));
+    ypr->roll = atan2(2.0 * (qj * qk + qi * qr), (-sqi - sqj + sqk + sqr));
+
+    if (degrees) {
+      ypr->yaw *= scaleRadToDeg;
+      ypr->pitch *= scaleRadToDeg;
+      ypr->roll *= scaleRadToDeg;
+    }
+}
+
+void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, euler_t* ypr, bool degrees = false) {
+    quaternionToEuler(rotational_vector->real, rotational_vector->i, rotational_vector->j, rotational_vector->k, ypr, degrees);
+}
+
+void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, euler_t* ypr, bool degrees = false) {
+    quaternionToEuler(rotational_vector->real, rotational_vector->i, rotational_vector->j, rotational_vector->k, ypr, degrees);
 }
 
 void Service::IMU::Handle(const uint8_t arg[]) {
+	uint8_t imu_read_timer = 0U;
+	float roll=0, pitch=0, yaw=0;
+	float Rr = 0;
+	float Ri = 0;
+	float Rj = 0;
+	float Rk = 0;
+
     /**
      * Handle arg packet.
      */
     switch(arg[0])
     {
+		case 0xA5:
+		{
+			LOG_DBG("sensor was reset. Reset Reason: %d", Motion.getResetReason());
+			
+			if(Motion.enableRotationVector(1000) == true) {
+				LOG_DBG("enableGeomagneticRotationVector enabled");
+			}
+		} break;
         default:
-        {
-			Service::IMU::ReadRotXYZ();
-            LOG_DBG("[Service::%s]::%s():\t%x.\tNYI.", mName, __func__, arg[0]);   
-            LOG_HEXDUMP_DBG(arg, 5, "\t\t\t IMU msg Buffer values.");
+        {	
+			if (Motion.getSensorEvent() == false) {
+				if (imu_read_timer > 300U) {
+					LOG_DBG("IMU sensor not responding. Resetting sensor.");
+					uint8_t msg[] = {0xA5, 0, 0, 0, 0};
+					Send( msg );
+					break;
+				} else {
+					imu_read_timer++;
+				}
+				RTOS::Hal::Delay(1);
+			} else {
+				imu_read_timer = 0;
+			}
+
+			uint8_t result = Motion.getSensorEventID();
+			if (result == SENSOR_REPORTID_ROTATION_VECTOR) {
+				Rr = Motion.getRot_R();
+				Ri = Motion.getRot_I();
+				Rj = Motion.getRot_J();
+				Rk = Motion.getRot_K();
+				
+				roll = atan2(2.0 * (Rr * Ri + Rj * Rk), 1.0 - 2.0 * (Ri * Ri + Rj * Rj)) * scaleRadToDeg;  /* ROLL */
+				pitch = atan2(2.0 * (Rr * Rj - Rk * Ri), 1.0 - 2.0 * (Rj * Rj + Ri * Ri)) * scaleRadToDeg; /* PITCH */
+				yaw = atan2(2.0 * (Rr * Rk + Ri * Rj), 1.0 - 2.0 * (Rj * Rj + Rk * Rk)) * scaleRadToDeg;   /* YAW */
+			
+				ypr = { .yaw=yaw, .pitch=pitch, .roll=roll };	
+				LOG_DBG("IMU: ROLL: %d, PITCH: %d, YAW: %d\n", (int)roll, (int)pitch, (int)yaw);				
+			}
+			else if (result == SENSOR_REPORTID_GAME_ROTATION_VECTOR) {
+				struct { 
+					float i = Motion.getGameI(); 
+					float j = Motion.getGameJ(); 
+					float k = Motion.getGameK(); 
+					float real = Motion.getGameReal(); 
+				} game_rotation_vector;
+				quaternionToEuler(game_rotation_vector.real, game_rotation_vector.i, game_rotation_vector.j, game_rotation_vector.k, &ypr, true);
+
+				LOG_INF("Game Rotation Vector: (%d, %d, %d, %d)\n", game_rotation_vector.i, game_rotation_vector.j, game_rotation_vector.k, game_rotation_vector.real);
+			}
+			else if (result == SENSOR_REPORTID_GYRO_INTEGRATED_ROTATION_VECTOR) {
+				LOG_INF("SENSOR_REPORTID_GYRO_INTEGRATED_ROTATION_VECTOR: (NYI)");
+			}
+			else if (result == SENSOR_REPORTID_AR_VR_STABILIZED_ROTATION_VECTOR) {
+				LOG_INF("SENSOR_REPORTID_AR_VR_STABILIZED_ROTATION_VECTOR: (NYI)");
+			}
+			else if (result == SENSOR_REPORTID_GEOMAGNETIC_ROTATION_VECTOR) {
+				LOG_INF("SENSOR_REPORTID_GEOMAGNETIC_ROTATION_VECTOR: (NYI)");
+			}
+			else
+			{
+				LOG_DBG("Result is not a rotation vector. Result: %d", result);
+			}
+
+
             break;
         }
     };
@@ -534,7 +669,7 @@ namespace Service
     using                       _IMU = RTOS::ActiveObject<Service::IMU>;
 
     template <>
-    const uint8_t               _IMU::mName[] =  "IMU";
+    const char               	_IMU::mName[] =  "IMU";
     template <>
     uint8_t                     _IMU::mCountLoops = 0;
     template <>

@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2022 Dhruva Gole
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#pragma once
+
+// #include <Arduino.h>
+// #include <api/HardwareI2C.h>
+// #include <api/Print.h>
+#include <zephyr/sys/ring_buffer.h>
+
+namespace arduino {
+
+class HardwareI2C
+{
+  public:
+    virtual void begin() = 0;
+    virtual void begin(uint8_t address) = 0;
+    virtual void end() = 0;
+
+    virtual void setClock(uint32_t freq) = 0;
+  
+    virtual void beginTransmission(uint8_t address) = 0;
+    virtual uint8_t endTransmission(bool stopBit) = 0;
+    virtual uint8_t endTransmission(void) = 0;
+
+    virtual size_t requestFrom(uint8_t address, size_t len, bool stopBit) = 0;
+    virtual size_t requestFrom(uint8_t address, size_t len) = 0;
+
+    virtual void onReceive(void(*)(int)) = 0;
+    virtual void onRequest(void(*)(void)) = 0;
+};
+
+}
+typedef void (*voidFuncPtrParamInt)(int);
+typedef void (*voidFuncPtr)(void);
+
+namespace arduino {
+
+class ZephyrI2C : public HardwareI2C {
+public:
+  ZephyrI2C(const struct device* i2c);
+
+  virtual void begin();
+  virtual void end();
+  virtual void begin(uint8_t address);
+  virtual void setClock(uint32_t freq);
+
+  virtual void beginTransmission(uint8_t address);
+  virtual uint8_t endTransmission(bool stopBit);
+  virtual uint8_t endTransmission(void);
+
+  virtual size_t requestFrom(uint8_t address, size_t len, bool stopBit);
+  virtual size_t requestFrom(uint8_t address, size_t len);
+
+  virtual void onReceive(void (*)(int));
+  virtual void onRequest(void (*)(void));
+
+  virtual size_t write(uint8_t data);
+  virtual size_t write(int data) { return write((uint8_t)data); };
+  virtual size_t write(const uint8_t *buffer, size_t size);
+  virtual int read();
+  virtual int peek();
+  virtual void flush();
+  virtual int available();
+
+private:
+  int _address;
+  uint8_t txBuffer[256];
+  uint32_t usedTxBuffer;
+  struct rx_ring_buf{
+    struct ring_buf rb;
+    uint8_t buffer[256];
+  };
+  struct rx_ring_buf rxRingBuffer;
+  const struct device* i2c_dev;
+};
+
+} // namespace arduino
+
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), i2cs) && (DT_PROP_LEN(DT_PATH(zephyr_user), i2cs) > 1)
+#define ARDUINO_WIRE_DEFINED_0 1
+#define DECL_EXTERN_WIRE_0(i)  extern arduino::ZephyrI2C Wire;
+#define DECL_EXTERN_WIRE_N(i)  extern arduino::ZephyrI2C Wire##i;
+#define DECLARE_EXTERN_WIRE_N(n, p, i)                                                             \
+	COND_CODE_1(ARDUINO_WIRE_DEFINED_##i, (DECL_EXTERN_WIRE_0(i)), (DECL_EXTERN_WIRE_N(i)))
+
+/* Declare Wire, Wire1, Wire2, ... */
+DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), i2cs, DECLARE_EXTERN_WIRE_N)
+
+#undef DECLARE_EXTERN_WIRE_N
+#undef DECL_EXTERN_WIRE_N
+#undef DECL_EXTERN_WIRE_0
+#undef ARDUINO_WIRE_DEFINED_0
+#else
+extern arduino::ZephyrI2C Wire;
+#endif
+
+typedef arduino::ZephyrI2C TwoWire;
